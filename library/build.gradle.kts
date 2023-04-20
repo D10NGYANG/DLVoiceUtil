@@ -43,13 +43,16 @@ android {
 dependencies {
     // Android
     implementation("androidx.core:core-ktx:1.10.0")
+    // 添加kotlin协程依赖
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_ver")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_ver")
 }
 
 afterEvaluate {
     publishing {
         publications {
             create("release", MavenPublication::class) {
-                artifactId = "DLQRCodeUtil"
+                artifactId = "DLVoiceUtil"
                 from(components.getByName("release"))
             }
         }

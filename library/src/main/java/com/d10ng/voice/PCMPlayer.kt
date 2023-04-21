@@ -4,11 +4,19 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import java.util.*
+import kotlinx.coroutines.launch
+import java.util.Timer
 import kotlin.concurrent.schedule
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * PCM播放器
@@ -27,10 +35,13 @@ class PCMPlayer(
     // 播放时间
     private val playTimeFlow = MutableStateFlow(0)
     private val playTimeTextFlow = playTimeFlow.map { secondTime2Text(it) }
+    // 播放音量
+    private val playVolumeFlow = MutableSharedFlow<Int>()
 
     fun getPlayStatusFlow() = isPlayingFlow.asStateFlow()
     fun getPlayTimeFlow() = playTimeFlow.asStateFlow()
     fun getPlayTimeTextFlow() = playTimeTextFlow
+    fun getPlayVolumeUpdateEvent() = playVolumeFlow.asSharedFlow()
 
     private var playTimer: Timer? = null
 
@@ -75,11 +86,30 @@ class PCMPlayer(
         audioTrack?.play()
         // 监听设备是否播放完毕
         Thread {
+            val scope = CoroutineScope(Dispatchers.IO)
             // 通过PCM音频字节数据计算音频长度，单位为毫秒
             val duration = data.size / 16
             val startTime = System.currentTimeMillis()
-            while (audioTrack != null && System.currentTimeMillis() - startTime < duration) {
-                Thread.sleep(100)
+            var lastIndex = 0
+            var offsetTime = 0L
+            while (audioTrack != null && offsetTime < duration) {
+                val volume = if (offsetTime == 0L) 0
+                else {
+                    // 拿到当前时间的字节数据
+                    val index = minOf(offsetTime * 16, data.size.toLong())
+                    val bytes = data.copyOfRange(lastIndex, index.toInt())
+                    lastIndex = index.toInt()
+                    var total = 0.0
+                    for (i in bytes.indices step 2) {
+                        val arr = byteArrayOf(bytes[i], bytes[i + 1])
+                        total += abs(arr.toShort().toDouble())
+                    }
+                    val per = total / bytes.size * 2
+                    if(per == 0.0) 0 else min(per.roundToInt() / 20, 100)
+                }
+                scope.launch { playVolumeFlow.emit(volume) }
+                Thread.sleep(128)
+                offsetTime = System.currentTimeMillis() - startTime
             }
             stop()
         }.start()

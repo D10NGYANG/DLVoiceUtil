@@ -4,12 +4,20 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.util.*
 import kotlin.concurrent.schedule
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * PCM录音器
@@ -29,12 +37,12 @@ class PCMRecorder(
     private val recordTimeFlow = MutableStateFlow(0)
     private val recordTimeTextFlow = recordTimeFlow.map { secondTime2Text(it) }
     // 录音音量
-    private val recordVolumeFlow = MutableStateFlow(0)
+    private val recordVolumeFlow = MutableSharedFlow<Int>()
 
     fun getRecordStatusFlow() = isRecordingFlow.asStateFlow()
     fun getRecordTimeFlow() = recordTimeFlow.asStateFlow()
     fun getRecordTimeTextFlow() = recordTimeTextFlow
-    fun getRecordVolumeFlow() = recordVolumeFlow.asStateFlow()
+    fun getRecordVolumeUpdateEvent() = recordVolumeFlow.asSharedFlow()
 
     private var recordThread: Thread? = null
     private var recordTimer: Timer? = null
@@ -54,20 +62,21 @@ class PCMRecorder(
         audioRecorder = AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes)
 
         recordThread = Thread {
+            val scope = CoroutineScope(Dispatchers.IO)
             audioRecorder!!.startRecording()
             bos = ByteArrayOutputStream()
             val buffer = ShortArray(bufferSizeInBytes)
             while (audioRecorder != null) {
                 val readSize = audioRecorder!!.read(buffer, 0, bufferSizeInBytes)
                 if (readSize > 0) {
-                    var volume = 0
+                    var total = 0.0
                     for (i in 0 until readSize) {
-                        val a = buffer[i].toInt()
-                        if (a > volume || -a > volume)
-                            volume = a
+                        total += abs(buffer[i].toDouble())
                     }
-                    recordVolumeFlow.value = volume
-                    bos?.write(short2byte(buffer))
+                    val per = total / readSize
+                    val volume = if(per == 0.0) 0 else min(per.roundToInt() / 20, 100)
+                    scope.launch { recordVolumeFlow.emit(volume) }
+                    bos?.write(buffer.toByteArray())
                 }
             }
         }

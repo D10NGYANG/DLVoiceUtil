@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.0.1"
+version = "0.0.2"
 
 android {
     namespace = "com.d10ng.voice"
@@ -43,6 +43,10 @@ android {
 dependencies {
     // Android
     implementation("androidx.core:core-ktx:1.10.0")
+    // 单元测试（可选）
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     // 添加kotlin协程依赖
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_ver")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_ver")

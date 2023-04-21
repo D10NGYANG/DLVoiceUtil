@@ -39,6 +39,8 @@ class PCMRecorder(
     private var recordThread: Thread? = null
     private var recordTimer: Timer? = null
     private var bos: ByteArrayOutputStream? = null
+    var data: ByteArray? = null
+        private set
 
     /**
      * 开始录音
@@ -95,6 +97,7 @@ class PCMRecorder(
         bos?.close()
         bos = null
         isRecordingFlow.value = false
+        this.data = data
         return data
     }
 }

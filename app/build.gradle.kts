@@ -53,6 +53,14 @@ dependencies {
     // jetpack compose 框架
     implementation("com.github.D10NGYANG:DLJetpackComposeUtil:1.3.2")
 
+    // Optional - Integration with activities
+    implementation("androidx.activity:activity-compose:1.7.1")
+    // Optional - Integration with ViewModels
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+
+    // 权限申请
+    implementation("com.google.accompanist:accompanist-permissions:0.28.0")
+
     implementation(project(":library"))
     // 内存泄漏检查
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.10")

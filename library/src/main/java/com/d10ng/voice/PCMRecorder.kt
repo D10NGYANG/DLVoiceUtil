@@ -102,11 +102,11 @@ class PCMRecorder(
         recordThread = null
         recordTimer?.cancel()
         recordTimer = null
-        val data = bos!!.toByteArray()
+        val data = bos?.toByteArray()
         bos?.close()
         bos = null
         isRecordingFlow.value = false
         this.data = data
-        return data
+        return data?: byteArrayOf()
     }
 }

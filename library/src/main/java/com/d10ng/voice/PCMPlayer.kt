@@ -95,7 +95,7 @@ class PCMPlayer(
             val startTime = System.currentTimeMillis()
             var lastIndex = 0
             var offsetTime = 0L
-            while (audioTrack != null && offsetTime < duration) {
+            while (audioTrack != null && offsetTime < duration && !Thread.interrupted()) {
                 val volume = if (offsetTime == 0L) 0
                 else {
                     // 拿到当前时间的字节数据
@@ -108,10 +108,15 @@ class PCMPlayer(
                         total += abs(arr.toShort().toDouble())
                     }
                     val per = total / bytes.size * 2
-                    if(per == 0.0) 0 else min(per.roundToInt() / 20, 100)
+                    if (per == 0.0) 0 else min(per.roundToInt() / 20, 100)
                 }
                 scope.launch { playVolumeFlow.emit(volume) }
-                Thread.sleep(128)
+                try {
+                    Thread.sleep(128)
+                } catch (e: Exception) {
+                    Thread.currentThread().interrupt()
+                    e.printStackTrace()
+                }
                 offsetTime = System.currentTimeMillis() - startTime
             }
             stop()

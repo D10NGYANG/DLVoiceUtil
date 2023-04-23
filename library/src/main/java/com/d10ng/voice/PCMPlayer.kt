@@ -25,16 +25,18 @@ class PCMPlayer(
     private val encoding: Int = AudioFormat.ENCODING_PCM_16BIT,
     private val sampleRateInHz: Int = 8000,
     private val channelConfig: Int = AudioFormat.CHANNEL_OUT_MONO,
-    private val transferMode: Int = AudioTrack.MODE_STATIC
+    private val transferMode: Int = AudioTrack.MODE_STATIC,
+    // 计时频率，单位为毫秒
+    private val timingFrequency: Long = 100L
 ) {
 
     private var audioTrack: AudioTrack? = null
 
     // 播放状态
     private val isPlayingFlow = MutableStateFlow(false)
-    // 播放时间
-    private val playTimeFlow = MutableStateFlow(0)
-    private val playTimeTextFlow = playTimeFlow.map { secondTime2Text(it) }
+    // 播放时间，单位为毫秒
+    private val playTimeFlow = MutableStateFlow(0L)
+    private val playTimeTextFlow = playTimeFlow.map { secondTime2Text(it / 1000) }
     // 播放音量
     private val playVolumeFlow = MutableSharedFlow<Int>()
 
@@ -115,9 +117,9 @@ class PCMPlayer(
         }.start()
 
         playTimer = Timer().apply {
-            schedule(0L, 1000L) {
-                // 播放时长 +1
-                playTimeFlow.value += 1
+            schedule(timingFrequency, timingFrequency) {
+                // 播放时长增加
+                playTimeFlow.value += timingFrequency
             }
         }
     }

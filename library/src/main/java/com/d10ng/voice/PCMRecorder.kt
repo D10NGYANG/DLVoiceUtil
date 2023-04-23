@@ -27,15 +27,17 @@ class PCMRecorder(
     private val sampleRateInHz: Int = 8000,
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,
     private val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
-    private val bufferSizeInBytes: Int = 1024
+    private val bufferSizeInBytes: Int = 1024,
+    // 计时频率，单位为毫秒
+    private val timingFrequency: Long = 100L
 ) {
     private var audioRecorder: AudioRecord? = null
 
     // 录音状态
     private val isRecordingFlow = MutableStateFlow(false)
-    // 录音时长
-    private val recordTimeFlow = MutableStateFlow(0)
-    private val recordTimeTextFlow = recordTimeFlow.map { secondTime2Text(it) }
+    // 录音时长，单位为毫秒
+    private val recordTimeFlow = MutableStateFlow(0L)
+    private val recordTimeTextFlow = recordTimeFlow.map { secondTime2Text(it / 1000) }
     // 录音音量
     private val recordVolumeFlow = MutableSharedFlow<Int>()
 
@@ -83,9 +85,9 @@ class PCMRecorder(
         recordThread?.start()
 
         recordTimer = Timer().apply {
-            schedule(0L, 1000L) {
-                // 录音时长 +1
-                recordTimeFlow.value += 1
+            schedule(timingFrequency, timingFrequency) {
+                // 录音时长增加
+                recordTimeFlow.value += timingFrequency
             }
         }
     }

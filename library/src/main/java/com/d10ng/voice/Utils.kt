@@ -40,10 +40,10 @@ internal fun ByteArray.toShort(): Short {
 
 /**
  * 将秒数转换为时分秒格式，如：00:00:00
- * @param time Int
+ * @param time Long
  * @return String
  */
-internal fun secondTime2Text(time: Int): String {
+internal fun secondTime2Text(time: Long): String {
     val hour = time / 3600
     val minute = time / 60 % 60
     val second = time % 60

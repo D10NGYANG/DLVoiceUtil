@@ -46,6 +46,7 @@ class PCMPlayer(
     fun getPlayVolumeUpdateEvent() = playVolumeFlow.asSharedFlow()
 
     private var playTimer: Timer? = null
+    private var playThread: Thread? = null
 
     /**
      * 开始播放
@@ -87,7 +88,7 @@ class PCMPlayer(
         audioTrack?.write(data, 0, data.size)
         audioTrack?.play()
         // 监听设备是否播放完毕
-        Thread {
+        playThread = Thread {
             val scope = CoroutineScope(Dispatchers.IO)
             // 通过PCM音频字节数据计算音频长度，单位为毫秒
             val duration = data.size / 16
@@ -114,7 +115,7 @@ class PCMPlayer(
                 offsetTime = System.currentTimeMillis() - startTime
             }
             stop()
-        }.start()
+        }.apply { start() }
 
         playTimer = Timer().apply {
             schedule(timingFrequency, timingFrequency) {
@@ -132,6 +133,8 @@ class PCMPlayer(
         try {
             audioTrack?.stop()
             audioTrack?.release()
+            playThread?.interrupt()
+            playThread = null
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.0.4"
+version = "0.0.5"
 
 android {
     namespace = "com.d10ng.voice"

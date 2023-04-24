@@ -37,6 +37,7 @@ class PCMPlayer(
     // 播放时间，单位为毫秒
     private val playTimeFlow = MutableStateFlow(0L)
     private val playTimeTextFlow = playTimeFlow.map { secondTime2Text(it / 1000) }
+
     // 播放音量
     private val playVolumeFlow = MutableSharedFlow<Int>()
 
@@ -46,7 +47,9 @@ class PCMPlayer(
     fun getPlayVolumeUpdateEvent() = playVolumeFlow.asSharedFlow()
 
     private var playTimer: Timer? = null
-    private var playThread: Thread? = null
+
+    // 计算播放音量定时器
+    private var volumeTimer: Timer? = null
 
     /**
      * 开始播放
@@ -57,6 +60,7 @@ class PCMPlayer(
         if (audioTrack != null) return
         isPlayingFlow.value = true
         playTimeFlow.value = 0
+        println("PCMPlayer start")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(
@@ -88,14 +92,17 @@ class PCMPlayer(
         audioTrack?.write(data, 0, data.size)
         audioTrack?.play()
         // 监听设备是否播放完毕
-        playThread = Thread {
-            val scope = CoroutineScope(Dispatchers.IO)
+        volumeTimer = Timer().apply {
             // 通过PCM音频字节数据计算音频长度，单位为毫秒
             val duration = data.size / 16
             val startTime = System.currentTimeMillis()
             var lastIndex = 0
             var offsetTime = 0L
-            while (audioTrack != null && offsetTime < duration && !Thread.interrupted()) {
+            schedule(0, 128) {
+                if (audioTrack == null || offsetTime >= duration) {
+                    cancel()
+                    return@schedule
+                }
                 val volume = if (offsetTime == 0L) 0
                 else {
                     // 拿到当前时间的字节数据
@@ -110,17 +117,10 @@ class PCMPlayer(
                     val per = total / bytes.size * 2
                     if (per == 0.0) 0 else min(per.roundToInt() / 20, 100)
                 }
-                scope.launch { playVolumeFlow.emit(volume) }
-                try {
-                    Thread.sleep(128)
-                } catch (e: Exception) {
-                    Thread.currentThread().interrupt()
-                    e.printStackTrace()
-                }
+                CoroutineScope(Dispatchers.IO).launch { playVolumeFlow.emit(volume) }
                 offsetTime = System.currentTimeMillis() - startTime
             }
-            stop()
-        }.apply { start() }
+        }
 
         playTimer = Timer().apply {
             schedule(timingFrequency, timingFrequency) {
@@ -138,14 +138,14 @@ class PCMPlayer(
         try {
             audioTrack?.stop()
             audioTrack?.release()
-            playThread?.interrupt()
-            playThread = null
+            audioTrack = null
         } catch (e: Exception) {
             e.printStackTrace()
         }
         playTimer?.cancel()
         playTimer = null
-        audioTrack = null
+        volumeTimer?.cancel()
+        volumeTimer = null
         isPlayingFlow.value = false
     }
 }

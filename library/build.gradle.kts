@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.0.6"
+version = "0.0.7"
 
 android {
     namespace = "com.d10ng.voice"
@@ -52,6 +52,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_ver")
 }
 
+val bds100MavenUsername: String by project
+val bds100MavenPassword: String by project
+
 afterEvaluate {
     publishing {
         publications {
@@ -63,6 +66,13 @@ afterEvaluate {
         repositories {
             maven {
                 url = uri("/Users/d10ng/project/kotlin/maven-repo/repository")
+            }
+            maven {
+                credentials {
+                    username = bds100MavenUsername
+                    password = bds100MavenPassword
+                }
+                setUrl("https://nexus.bds100.com/repository/maven-releases/")
             }
         }
     }

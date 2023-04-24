@@ -60,7 +60,6 @@ class PCMPlayer(
         if (audioTrack != null) return
         isPlayingFlow.value = true
         playTimeFlow.value = 0
-        println("PCMPlayer start")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(
@@ -91,15 +90,18 @@ class PCMPlayer(
         }
         audioTrack?.write(data, 0, data.size)
         audioTrack?.play()
+        val duration = data.size / 16
         // 监听设备是否播放完毕
         volumeTimer = Timer().apply {
             // 通过PCM音频字节数据计算音频长度，单位为毫秒
-            val duration = data.size / 16
             val startTime = System.currentTimeMillis()
             var lastIndex = 0
             var offsetTime = 0L
             schedule(0, 128) {
                 if (audioTrack == null || offsetTime >= duration) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (isPlayingFlow.value) isPlayingFlow.emit(false)
+                    }
                     cancel()
                     return@schedule
                 }
@@ -126,6 +128,7 @@ class PCMPlayer(
             schedule(timingFrequency, timingFrequency) {
                 // 播放时长增加
                 playTimeFlow.value += timingFrequency
+                if (playTimeFlow.value >= duration) cancel()
             }
         }
     }

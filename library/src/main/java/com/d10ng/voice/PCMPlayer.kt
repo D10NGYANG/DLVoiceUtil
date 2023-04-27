@@ -100,7 +100,7 @@ class PCMPlayer(
             schedule(0, 128) {
                 if (audioTrack == null || offsetTime >= duration) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        if (isPlayingFlow.value) isPlayingFlow.emit(false)
+                        stop()
                     }
                     cancel()
                     return@schedule

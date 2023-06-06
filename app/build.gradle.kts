@@ -43,7 +43,7 @@ android {
 
 dependencies {
     // Android
-    implementation("androidx.core:core-ktx:1.10.0")
+    implementation("androidx.core:core-ktx:1.10.1")
 
     // 单元测试（可选）
     testImplementation("junit:junit:4.13.2")
@@ -54,14 +54,14 @@ dependencies {
     implementation("com.github.D10NGYANG:DLJetpackComposeUtil:1.3.3")
 
     // Optional - Integration with activities
-    implementation("androidx.activity:activity-compose:1.7.1")
+    implementation("androidx.activity:activity-compose:1.7.2")
     // Optional - Integration with ViewModels
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 
     // 权限申请
-    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
+    implementation("com.google.accompanist:accompanist-permissions:${accompanist_ver}")
 
     implementation(project(":library"))
     // 内存泄漏检查
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.10")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.11")
 }

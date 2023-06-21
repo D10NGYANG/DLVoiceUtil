@@ -23,7 +23,7 @@ import kotlin.math.roundToInt
  */
 class PCMPlayer(
     private val encoding: Int = AudioFormat.ENCODING_PCM_16BIT,
-    private val sampleRateInHz: Int = 8000,
+    private val sampleRateInHz: Int = 48000,
     private val channelConfig: Int = AudioFormat.CHANNEL_OUT_MONO,
     private val transferMode: Int = AudioTrack.MODE_STATIC,
     // 计时频率，单位为毫秒
@@ -90,7 +90,7 @@ class PCMPlayer(
         }
         audioTrack?.write(data, 0, data.size)
         audioTrack?.play()
-        val duration = data.size / 16
+        val duration = data.size / (sampleRateInHz * 2 / 1000)
         // 监听设备是否播放完毕
         volumeTimer = Timer().apply {
             // 通过PCM音频字节数据计算音频长度，单位为毫秒

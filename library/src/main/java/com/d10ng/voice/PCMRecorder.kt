@@ -3,6 +3,7 @@ package com.d10ng.voice
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.NoiseSuppressor
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,7 @@ import kotlin.math.roundToInt
  */
 class PCMRecorder(
     private val audioSource: Int = MediaRecorder.AudioSource.MIC,
-    private val sampleRateInHz: Int = 8000,
+    private val sampleRateInHz: Int = 48000,
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,
     private val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
     private val bufferSizeInBytes: Int = 1024,
@@ -49,6 +50,7 @@ class PCMRecorder(
     private var recordThread: Thread? = null
     private var recordTimer: Timer? = null
     private var bos: ByteArrayOutputStream? = null
+    private var noiseSuppressor: NoiseSuppressor? = null
     var data: ByteArray? = null
         private set
 
@@ -61,7 +63,14 @@ class PCMRecorder(
         if (audioRecorder != null) return
         isRecordingFlow.value = true
         recordTimeFlow.value = 0
-        audioRecorder = AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes)
+        audioRecorder =
+            AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes)
+        // 噪音抑制
+        if (NoiseSuppressor.isAvailable()) {
+            println("噪音抑制可用")
+            noiseSuppressor = NoiseSuppressor.create(audioRecorder!!.audioSessionId)
+            noiseSuppressor?.enabled = true
+        }
 
         recordThread = Thread {
             val scope = CoroutineScope(Dispatchers.IO)
@@ -99,7 +108,9 @@ class PCMRecorder(
     @Synchronized
     fun stop(): ByteArray {
         audioRecorder?.stop()
+        audioRecorder?.release()
         audioRecorder = null
+        noiseSuppressor?.release()
         recordThread?.interrupt()
         recordThread = null
         recordTimer?.cancel()

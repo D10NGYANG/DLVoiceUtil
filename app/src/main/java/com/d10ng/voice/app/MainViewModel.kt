@@ -7,6 +7,7 @@ import com.d10ng.voice.PCMPlayer
 import com.d10ng.voice.PCMRecorder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainViewModel: ViewModel() {
 
@@ -58,5 +59,13 @@ class MainViewModel: ViewModel() {
 
     fun stopPlay() {
         player.stop()
+    }
+
+    fun save() {
+        recorder.data?.apply {
+            val file =
+                File(MainActivity.instant!!.cacheDir, "output-${System.currentTimeMillis()}.pcm")
+            file.writeBytes(this)
+        }
     }
 }

@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -28,16 +26,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d10ng.compose.BaseActivity
-import com.d10ng.compose.ui.AppColor
 import com.d10ng.compose.ui.AppTheme
-import com.d10ng.compose.view.VerticalLinearProgressIndicator
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 
 class MainActivity : BaseActivity() {
+
+    companion object {
+        var instant: MainActivity? = null
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instant = this
         setContent {
             AppTheme(app = app) {
                 Box(
@@ -47,6 +49,11 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        instant = null
+        super.onDestroy()
     }
 }
 
@@ -92,6 +99,12 @@ fun MainView(
             }
             Text("当前播放时长: $playTimeText")
             VolumeListBar(list = playVolumeList)
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(onClick = {
+                model.save()
+            }) {
+                Text("导出音频原始文件到cache目录")
+            }
         }
     } else {
         Box(

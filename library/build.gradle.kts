@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.0.11"
+version = "0.0.12"
 
 android {
     namespace = "com.d10ng.voice"
@@ -50,9 +50,6 @@ dependencies {
     // 添加kotlin协程依赖
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_ver")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_ver")
-
-    // https://mvnrepository.com/artifact/org.webrtc/google-webrtc
-    implementation("org.webrtc:google-webrtc:1.0.32006")
 }
 
 val bds100MavenUsername: String by project

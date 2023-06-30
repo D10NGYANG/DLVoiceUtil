@@ -51,17 +51,17 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // jetpack compose 框架
-    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:1.3.4")
+    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:1.3.5")
 
     // Optional - Integration with activities
     implementation("androidx.activity:activity-compose:1.7.2")
     // Optional - Integration with ViewModels
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$jetpack_lifecycle_ver")
 
     // 权限申请
-    implementation("com.google.accompanist:accompanist-permissions:${accompanist_ver}")
+    implementation("com.google.accompanist:accompanist-permissions:$accompanist_ver")
 
     implementation(project(":library"))
     // 内存泄漏检查
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.11")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
 }

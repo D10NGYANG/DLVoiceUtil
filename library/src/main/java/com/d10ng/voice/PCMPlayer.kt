@@ -79,6 +79,7 @@ class PCMPlayer(
                 .setTransferMode(transferMode)
                 .build()
         } else {
+            @Suppress("DEPRECATION")
             audioTrack = AudioTrack(
                 android.media.AudioManager.STREAM_MUSIC,
                 sampleRateInHz,

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.1.1"
+version = "0.1.2"
 
 android {
     namespace = "com.d10ng.voice"
@@ -42,7 +42,7 @@ android {
 
 dependencies {
     // Android
-    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.core:core-ktx:1.12.0")
     // 单元测试（可选）
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -29,16 +30,17 @@ class PCMRecorder(
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,
     private val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
     private val bufferSizeInBytes: Int = 1024,
-    // 计时频率，单位为毫秒
-    private val timingFrequency: Long = 100L
 ) {
     private var audioRecorder: AudioRecord? = null
 
     // 录音状态
     private val isRecordingFlow = MutableStateFlow(false)
+
     // 录音时长，单位为毫秒
     private val recordTimeFlow = MutableStateFlow(0L)
-    private val recordTimeTextFlow = recordTimeFlow.map { secondTime2Text(it / 1000) }
+    private val recordTimeTextFlow =
+        recordTimeFlow.map { it / 1000 }.distinctUntilChanged().map { secondTime2Text(it) }
+
     // 录音音量
     private val recordVolumeFlow = MutableSharedFlow<Int>()
 
@@ -67,36 +69,37 @@ class PCMRecorder(
             AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes)
         // 噪音抑制
         if (NoiseSuppressor.isAvailable()) {
-            println("噪音抑制可用")
             noiseSuppressor = NoiseSuppressor.create(audioRecorder!!.audioSessionId)
             noiseSuppressor?.enabled = true
         }
 
         recordThread = Thread {
-            val scope = CoroutineScope(Dispatchers.IO)
-            audioRecorder!!.startRecording()
-            bos = ByteArrayOutputStream()
-            val buffer = ShortArray(bufferSizeInBytes)
-            while (audioRecorder != null) {
-                val readSize = audioRecorder!!.read(buffer, 0, bufferSizeInBytes)
-                if (readSize > 0) {
-                    var total = 0.0
-                    for (i in 0 until readSize) {
-                        total += abs(buffer[i].toDouble())
+            runCatching {
+                val scope = CoroutineScope(Dispatchers.IO)
+                audioRecorder!!.startRecording()
+                bos = ByteArrayOutputStream()
+                val buffer = ShortArray(bufferSizeInBytes)
+                while (audioRecorder != null) {
+                    val readSize = audioRecorder!!.read(buffer, 0, bufferSizeInBytes)
+                    if (readSize > 0) {
+                        var total = 0.0
+                        for (i in 0 until readSize) {
+                            total += abs(buffer[i].toDouble())
+                        }
+                        val per = total / readSize
+                        val volume = if (per == 0.0) 0 else min(per.roundToInt() / 20, 100)
+                        scope.launch { recordVolumeFlow.emit(volume) }
+                        bos?.write(buffer.toByteArray())
                     }
-                    val per = total / readSize
-                    val volume = if(per == 0.0) 0 else min(per.roundToInt() / 20, 100)
-                    scope.launch { recordVolumeFlow.emit(volume) }
-                    bos?.write(buffer.toByteArray())
                 }
             }
         }
         recordThread?.start()
 
         recordTimer = Timer().apply {
-            schedule(timingFrequency, timingFrequency) {
+            schedule(1, 1) {
                 // 录音时长增加
-                recordTimeFlow.value += timingFrequency
+                recordTimeFlow.value += 1
             }
         }
     }

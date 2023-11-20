@@ -2,6 +2,7 @@ package com.d10ng.voice.app
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -15,8 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,13 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.d10ng.compose.BaseActivity
-import com.d10ng.compose.ui.AppTheme
+import com.d10ng.voice.app.ui.DLTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 
-class MainActivity : BaseActivity() {
+class MainActivity : ComponentActivity() {
 
     companion object {
         var instant: MainActivity? = null
@@ -41,7 +41,7 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         instant = this
         setContent {
-            AppTheme(app = app) {
+            DLTheme() {
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {

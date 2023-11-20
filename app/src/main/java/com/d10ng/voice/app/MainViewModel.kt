@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.d10ng.voice.PCMPlayer
 import com.d10ng.voice.PCMRecorder
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
+@OptIn(FlowPreview::class)
 class MainViewModel: ViewModel() {
 
     private val recorder = PCMRecorder()

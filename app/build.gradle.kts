@@ -51,7 +51,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // jetpack compose 框架
-    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.9")
+    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.12")
 
     // Optional - Integration with activities
     implementation("androidx.activity:activity-compose:1.8.1")

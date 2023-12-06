@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
-import java.util.*
+import java.util.Timer
 import kotlin.concurrent.schedule
 import kotlin.math.abs
 import kotlin.math.min
@@ -36,10 +36,13 @@ class PCMRecorder(
     // 录音状态
     private val isRecordingFlow = MutableStateFlow(false)
 
+    // 开始录音时间戳
+    private var startTimeStamp = 0L
+
     // 录音时长，单位为毫秒
     private val recordTimeFlow = MutableStateFlow(0L)
-    private val recordTimeTextFlow =
-        recordTimeFlow.map { it / 1000 }.distinctUntilChanged().map { secondTime2Text(it) }
+    private val recordTimeTextFlow = recordTimeFlow.map { it / 1000 }
+        .distinctUntilChanged().map { secondTime2Text(it) }
 
     // 录音音量
     private val recordVolumeFlow = MutableSharedFlow<Int>()
@@ -95,11 +98,11 @@ class PCMRecorder(
             }
         }
         recordThread?.start()
-
+        startTimeStamp = System.currentTimeMillis()
         recordTimer = Timer().apply {
-            schedule(1, 1) {
+            schedule(1, 8) {
                 // 录音时长增加
-                recordTimeFlow.value += 1
+                recordTimeFlow.value = System.currentTimeMillis() - startTimeStamp
             }
         }
     }

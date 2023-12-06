@@ -34,6 +34,9 @@ class PCMPlayer(
     // 播放状态
     private val isPlayingFlow = MutableStateFlow(false)
 
+    // 开始播放时间戳
+    private var startTimestamp = 0L
+
     // 播放时间，单位为毫秒
     private val playTimeFlow = MutableStateFlow(0L)
     private val playTimeTextFlow =
@@ -47,6 +50,7 @@ class PCMPlayer(
     fun getPlayTimeTextFlow() = playTimeTextFlow
     fun getPlayVolumeUpdateEvent() = playVolumeFlow.asSharedFlow()
 
+    // 计算播放时间定时器
     private var playTimer: Timer? = null
 
     // 计算播放音量定时器
@@ -126,11 +130,11 @@ class PCMPlayer(
                 offsetTime = System.currentTimeMillis() - startTime
             }
         }
-
+        startTimestamp = System.currentTimeMillis()
         playTimer = Timer().apply {
-            schedule(1, 1) {
+            schedule(1, 8) {
                 // 播放时长增加
-                playTimeFlow.value += 1
+                playTimeFlow.value = System.currentTimeMillis() - startTimestamp
                 if (playTimeFlow.value >= duration) cancel()
             }
         }

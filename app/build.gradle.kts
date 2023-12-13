@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.d10ng.voice.app"
-    compileSdk = Project.compile_sdk
+    compileSdk = android_compile_sdk
 
     defaultConfig {
         applicationId = "com.d10ng.voice.app"
-        minSdk = Project.min_sdk
-        targetSdk = Project.target_sdk
+        minSdk = android_min_sdk
+        targetSdk = android_target_sdk
         versionCode = 1
         versionName = "0.0.1"
 
@@ -51,7 +51,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // jetpack compose 框架
-    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.12")
+    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.13")
 
     // Optional - Integration with activities
     implementation("androidx.activity:activity-compose:1.8.1")

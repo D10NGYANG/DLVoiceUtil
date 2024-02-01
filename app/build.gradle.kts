@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.d10ng.voice.app"
-        minSdk = android_min_sdk
+        minSdk = 26
         targetSdk = android_target_sdk
         versionCode = 1
         versionName = "0.0.1"
@@ -51,10 +51,10 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // jetpack compose 框架
-    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.13")
+    implementation("com.github.D10NGYANG:DLJetpackComposeUtil:2.0.15")
 
     // Optional - Integration with activities
-    implementation("androidx.activity:activity-compose:1.8.1")
+    implementation("androidx.activity:activity-compose:1.8.2")
     // Optional - Integration with ViewModels
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$jetpack_lifecycle_ver")
 
@@ -63,5 +63,5 @@ dependencies {
 
     implementation(project(":library"))
     // 内存泄漏检查
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.13")
 }

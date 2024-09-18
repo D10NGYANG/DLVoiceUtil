@@ -1,64 +1,66 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidLibrary)
     id("maven-publish")
 }
 
 group = "com.github.D10NGYANG"
 version = "0.1.5"
 
+kotlin {
+    androidTarget {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_1_8)
+        }
+        publishLibraryVariants("release")
+    }
+    iosArm64()
+
+    sourceSets {
+        commonMain.dependencies {
+            // 协程
+            implementation(libs.kotlinx.coroutines)
+        }
+        androidMain.dependencies {
+            // Android
+            implementation(libs.androidx.core.ktx)
+            // 协程 Android
+            implementation(libs.kotlinx.coroutines.android)
+        }
+    }
+}
+
 android {
     namespace = "com.d10ng.voice"
-    compileSdk = android_compile_sdk
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = android_min_sdk
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
+        minSdk = libs.versions.android.minSdk.get().toInt()
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlin {
-        jvmToolchain(8)
-    }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
 }
 
-dependencies {
-    // Android
-    implementation("androidx.core:core-ktx:1.12.0")
-    // 单元测试（可选）
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    // 添加kotlin协程依赖
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_ver")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_ver")
-}
 
 val bds100MavenUsername: String by project
 val bds100MavenPassword: String by project
 
+val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+}
+
 afterEvaluate {
     publishing {
         publications {
-            create("release", MavenPublication::class) {
-                artifactId = "DLVoiceUtil"
-                from(components.getByName("release"))
+            withType(MavenPublication::class) {
+                artifactId = artifactId.replace("library", "DLVoiceUtil")
+                artifact(tasks["javadocJar"])
             }
         }
         repositories {

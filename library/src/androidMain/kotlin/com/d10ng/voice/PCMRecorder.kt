@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 /**
  * PCM录音器
  */
-class PCMRecorder1(
+class PCMRecorder(
     private val audioSource: Int = MediaRecorder.AudioSource.MIC,
     private val sampleRateInHz: Int = 48000,
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,

@@ -3,11 +3,12 @@ package com.d10ng.voice
 import kotlinx.coroutines.flow.Flow
 
 /**
- * PCM录音器
+ * PCM音频录音器
  * @Author d10ng
- * @Date 2024/9/18 14:21
+ * @Date 2024/9/19 09:23
  */
-abstract class PCMRecorder(
+abstract class PCMVoiceRecorder(
+    // 采样率
     private val sampleRate: Int
 ) {
 
@@ -16,17 +17,11 @@ abstract class PCMRecorder(
      * @return Flow<ShortArray>
      */
     abstract fun start(): Flow<ShortArray>
-
-    /**
-     * 结束录音
-     */
-    abstract fun stop()
 }
 
 /**
  * 创建PCM录音器
  * @param sampleRate Int
- * @return IPCMRecorder
+ * @return PCMVoiceRecorder
  */
-expect fun createPCMRecorder(sampleRate: Int): PCMRecorder
-
+expect fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder

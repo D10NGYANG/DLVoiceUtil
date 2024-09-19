@@ -47,6 +47,8 @@ kotlin {
 
             implementation(project(":library"))
 
+            // 通用计算
+            implementation(libs.dl.common)
             // 文件IO
             implementation(libs.okio)
         }

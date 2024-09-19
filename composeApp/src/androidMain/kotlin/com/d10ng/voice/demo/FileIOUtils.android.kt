@@ -4,11 +4,12 @@ import com.d10ng.app.resource.getCachePath
 import java.io.File
 
 /**
- * 获取缓存目录路径
+ * 获取缓存文件存放路径
+ * @param fileName String
  * @return String
  */
-actual fun getCacheDir(): String {
-    return getCachePath()
+actual fun getCacheFilePath(fileName: String): String {
+    return "${getCachePath()}/${fileName}"
 }
 
 /**
@@ -32,4 +33,13 @@ actual fun writeFileAppend(path: String, data: ByteArray) {
  */
 actual fun deleteFile(path: String) {
     File(path).deleteOnExit()
+}
+
+/**
+ * 读取文件字节数据
+ * @param path String
+ * @return ByteArray
+ */
+actual fun readFile(path: String): ByteArray {
+    return File(path).readBytes()
 }

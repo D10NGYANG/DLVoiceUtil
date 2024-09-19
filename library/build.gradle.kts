@@ -24,6 +24,8 @@ kotlin {
         commonMain.dependencies {
             // 协程
             implementation(libs.kotlinx.coroutines)
+            // 通用计算
+            implementation(libs.dl.common)
         }
         androidMain.dependencies {
             // Android

@@ -19,10 +19,10 @@ import platform.AVFAudio.setActive
 /**
  * 创建PCM录音器
  * @param sampleRate Int
- * @return IPCMRecorder
+ * @return PCMVoiceRecorder
  */
-actual fun createPCMRecorder(sampleRate: Int): PCMRecorder {
-    return PCMRecorderIOS(sampleRate)
+actual fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder {
+    return PCMVoiceRecorderIOS(sampleRate)
 }
 
 /**
@@ -30,9 +30,9 @@ actual fun createPCMRecorder(sampleRate: Int): PCMRecorder {
  * @property sampleRate Int
  * @constructor
  */
-internal class PCMRecorderIOS(
+class PCMVoiceRecorderIOS(
     private val sampleRate: Int
-) : PCMRecorder(sampleRate) {
+) : PCMVoiceRecorder(sampleRate) {
 
     private var audioEngine: AVAudioEngine? = null
     private var inputNode: AVAudioInputNode? = null
@@ -70,17 +70,13 @@ internal class PCMRecorderIOS(
             }
             awaitClose {
                 inputNode?.removeTapOnBus(0u)
+                audioEngine?.stop()
+                audioEngine = null
+                inputNode = null
             }
         }
         audioEngine?.prepare()
         audioEngine?.startAndReturnError(null)
         return flow
-    }
-
-    override fun stop() {
-        inputNode?.removeTapOnBus(0u)
-        audioEngine?.stop()
-        audioEngine = null
-        inputNode = null
     }
 }

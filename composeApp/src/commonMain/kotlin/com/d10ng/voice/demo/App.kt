@@ -23,20 +23,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.d10ng.voice.PCMRecorder
-import com.d10ng.voice.createPCMRecorder
+import com.d10ng.common.base.toByteArray
+import com.d10ng.voice.PCMVoiceRecorder
+import com.d10ng.voice.createPCMVoicePlayer
+import com.d10ng.voice.createPCMVoiceRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.abs
 
-private var recorder: PCMRecorder? = null
-private val filePath = getCacheDir() + "/audio.pcm"
+private const val sampleRate = 48000
+private var recorder: PCMVoiceRecorder? = null
+private val filePath = getCacheFilePath("audio.pcm")
 private val recordVolumeListFlow = MutableStateFlow(List(40) { 0f })
+private var recordDataJob: Job? = null
 
 @Composable
 @Preview
@@ -53,20 +58,20 @@ fun App() {
             Button(onClick = {
                 if (recording) {
                     recording = false
-                    recorder?.stop()
+                    recordDataJob?.cancel()
                 } else {
                     CoroutineScope(Dispatchers.IO).launch {
                         if (requestRecordAudioPermission()) {
                             recording = true
                             recordTime = 0L
                             println("开始录音")
-                            recorder = createPCMRecorder(48000).apply {
-                                launch {
+                            recorder = createPCMVoiceRecorder(sampleRate).apply {
+                                recordDataJob = launch {
                                     deleteFile(filePath)
                                     start()
                                         .onCompletion { println("录音完成") }
                                         .collect {
-                                            //writeFileAppend(filePath, it)
+                                            writeFileAppend(filePath, it.toByteArray())
                                             var total = 0.0
                                             for (element in it) {
                                                 total += abs(element.toDouble())
@@ -93,6 +98,13 @@ fun App() {
             }
             Text(text = "录音时长: ${recordTime / 1000.0} 秒")
             VolumeListBar(list = recordVolumeList)
+
+            Button(onClick = {
+                val data = readFile(filePath)
+                createPCMVoicePlayer().start(data, sampleRate)
+            }) {
+                Text(text = "播放录音")
+            }
         }
     }
 }

@@ -7,14 +7,15 @@ import android.media.audiofx.NoiseSuppressor
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
 
 /**
  * 创建PCM录音器
  * @param sampleRate Int
- * @return IPCMRecorder
+ * @return PCMVoiceRecorder
  */
-actual fun createPCMRecorder(sampleRate: Int): PCMRecorder {
-    return PCMRecorderAndroid(sampleRate)
+actual fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder {
+    return PCMVoiceRecorderAndroid(sampleRate)
 }
 
 /**
@@ -22,9 +23,9 @@ actual fun createPCMRecorder(sampleRate: Int): PCMRecorder {
  * @property sampleRate Int
  * @constructor
  */
-class PCMRecorderAndroid(
+class PCMVoiceRecorderAndroid(
     private val sampleRate: Int
-) : PCMRecorder(sampleRate) {
+) : PCMVoiceRecorder(sampleRate) {
 
     private var audioRecorder: AudioRecord? = null
     private var noiseSuppressor: NoiseSuppressor? = null
@@ -59,18 +60,16 @@ class PCMRecorderAndroid(
                     if (readSize > 0) emit(buffer)
                 }
             }
+        }.onCompletion {
+            audioRecorder?.run {
+                stop()
+                release()
+            }
+            audioRecorder = null
+            noiseSuppressor?.run {
+                release()
+            }
+            noiseSuppressor = null
         }
-    }
-
-    override fun stop() {
-        audioRecorder?.run {
-            stop()
-            release()
-        }
-        audioRecorder = null
-        noiseSuppressor?.run {
-            release()
-        }
-        noiseSuppressor = null
     }
 }

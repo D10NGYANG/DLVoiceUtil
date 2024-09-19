@@ -6,10 +6,11 @@ package com.d10ng.voice.demo
  * @Date 2024/9/18 17:05
  */
 /**
- * 获取缓存目录路径
+ * 获取缓存文件存放路径
+ * @param fileName String
  * @return String
  */
-expect fun getCacheDir(): String
+expect fun getCacheFilePath(fileName: String): String
 
 /**
  * 删除文件
@@ -23,3 +24,10 @@ expect fun deleteFile(path: String)
  * @param data ByteArray
  */
 expect fun writeFileAppend(path: String, data: ByteArray)
+
+/**
+ * 读取文件字节数据
+ * @param path String
+ * @return ByteArray
+ */
+expect fun readFile(path: String): ByteArray

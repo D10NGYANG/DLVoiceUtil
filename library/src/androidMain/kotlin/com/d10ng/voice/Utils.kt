@@ -37,15 +37,3 @@ internal fun Short.toByteArray(): ByteArray {
 internal fun ByteArray.toShort(): Short {
     return (this[0].toUInt() or (this[1].toUInt() shl 8)).toShort()
 }
-
-/**
- * 将秒数转换为时分秒格式，如：00:00:00
- * @param time Long
- * @return String
- */
-internal fun secondTime2Text(time: Long): String {
-    val hour = time / 3600
-    val minute = time / 60 % 60
-    val second = time % 60
-    return String.format("%02d:%02d:%02d", hour, minute, second)
-}

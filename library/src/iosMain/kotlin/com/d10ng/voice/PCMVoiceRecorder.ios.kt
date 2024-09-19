@@ -38,7 +38,7 @@ class PCMVoiceRecorderIOS(
     private var inputNode: AVAudioInputNode? = null
 
     @OptIn(ExperimentalForeignApi::class)
-    override fun start(): Flow<ShortArray> {
+    override fun startRecord(): Flow<ShortArray> {
         if (audioEngine != null) throw Exception("Already recording")
         val bufferSizeInBytes = sampleRate * 2 * 1 / 60
         val audioSession = AVAudioSession.sharedInstance()

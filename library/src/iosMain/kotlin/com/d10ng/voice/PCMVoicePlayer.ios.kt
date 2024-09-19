@@ -7,11 +7,15 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.get
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
-import platform.AVFAudio.AVAudioEngine
 import platform.AVFAudio.AVAudioFormat
 import platform.AVFAudio.AVAudioPCMBuffer
-import platform.AVFAudio.AVAudioPCMFormatInt16
-import platform.AVFAudio.AVAudioPlayerNode
+import platform.AVFAudio.AVAudioPlayer
+import platform.AVFAudio.AVAudioPlayerDelegateProtocol
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryPlayback
+import platform.AVFAudio.AVAudioSessionModeDefault
+import platform.AVFAudio.setActive
+import platform.darwin.NSObject
 import platform.posix.memcpy
 
 /**
@@ -23,34 +27,59 @@ actual fun createPCMVoicePlayer(): PCMVoicePlayer {
 }
 
 class PCMVoicePlayerIOS : PCMVoicePlayer() {
+
+    private val playerDelegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
+        override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
+            println("播放结束")
+        }
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     override fun start(data: ByteArray, sampleRate: Int) {
-        val audioEngine = AVAudioEngine()
-        val playerNode = AVAudioPlayerNode()
-        audioEngine.attachNode(playerNode)
-        audioEngine.connect(playerNode, to = audioEngine.mainMixerNode, format = null)
-        audioEngine.startAndReturnError(null)
-
-        val format = AVAudioFormat(AVAudioPCMFormatInt16, sampleRate.toDouble(), 1u, true)
-        val frameCapacity = (data.size / 2).toUInt()
-        val buffer = AVAudioPCMBuffer(format, frameCapacity = frameCapacity)
-        buffer.frameLength = frameCapacity
-
-        val nsData = data.toNSData()
-        nsData.bytes?.let { dataPtr ->
-            buffer.int16ChannelData?.get(0)?.let { bufferPtr ->
-                memcpy(bufferPtr, dataPtr, data.size.toULong())
-            }
+        val wavData = pcmToWav(data).toNSData()
+        AVAudioSession.sharedInstance().apply {
+            setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)
+            setActive(true, null)
         }
-
-        playerNode.scheduleBuffer(buffer) {
-            println("Finished playing PCM data")
+        AVAudioPlayer(wavData, null).apply {
+            delegate = playerDelegate
+            prepareToPlay()
+            play()
         }
-        playerNode.play()
     }
 
     override fun stop() {
         TODO("Not yet implemented")
+    }
+
+    private fun pcmToWav(pcmData: ByteArray): ByteArray {
+        val wavHeader = createWavHeader(pcmData.size)
+        return wavHeader + pcmData
+    }
+
+    private fun createWavHeader(pcmDataSize: Int): ByteArray {
+        val wavDataSize = pcmDataSize + 36
+        return byteArrayOf(
+            0x52, 0x49, 0x46, 0x46, // "RIFF"
+            (wavDataSize and 0xff).toByte(),
+            ((wavDataSize shr 8) and 0xff).toByte(),
+            ((wavDataSize shr 16) and 0xff).toByte(),
+            ((wavDataSize shr 24) and 0xff).toByte(), // WAV Chunk Size
+            0x57, 0x41, 0x56, 0x45, // "WAVE"
+            0x66, 0x6d, 0x74, 0x20, // "fmt "
+            16, 0, 0, 0, // Subchunk1Size (16 for PCM)
+            1, 0, // AudioFormat (1 for PCM)
+            1, 0, // NumChannels (1 for mono)
+            0x80.toByte(), 0xbb.toByte(), 0, 0, // SampleRate (48000)
+            0x00, 0x77, 0x01, 0, // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
+            2, 0, // BlockAlign (NumChannels * BitsPerSample/8)
+            16, 0, // BitsPerSample (16 bits)
+            0x64, 0x61, 0x74, 0x61, // "data"
+            (pcmDataSize and 0xff).toByte(),
+            ((pcmDataSize shr 8) and 0xff).toByte(),
+            ((pcmDataSize shr 16) and 0xff).toByte(),
+            ((pcmDataSize shr 24) and 0xff).toByte() // Subchunk2Size
+        )
     }
 
     @OptIn(ExperimentalForeignApi::class)

@@ -31,7 +31,7 @@ class PCMVoiceRecorderAndroid(
     private var noiseSuppressor: NoiseSuppressor? = null
 
     @RequiresPermission(android.Manifest.permission.RECORD_AUDIO)
-    override fun start(): Flow<ShortArray> {
+    override fun startRecord(): Flow<ShortArray> {
         if (audioRecorder != null) throw Exception("Already recording")
         // MediaRecorder.AudioSource.MIC：指定音频源为设备的麦克风
         // AudioFormat.CHANNEL_IN_MONO：指定单声道

@@ -45,7 +45,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
 
-            implementation(project(":library"))
+            implementation(project(":DLVoiceUtil"))
 
             // 通用计算
             implementation(libs.dl.common)

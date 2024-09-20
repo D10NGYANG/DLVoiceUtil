@@ -69,7 +69,6 @@ abstract class PCMVoiceRecorder(
                 recordVolumeFlow.emit(volume)
                 // 计算录音时长
                 recordTimeFlow.value += it.size / (sampleRate / 1000)
-                println("录音时长变化：${recordTimeFlow.value}")
                 // 添加录音数据
                 data += it.toByteArray()
             }

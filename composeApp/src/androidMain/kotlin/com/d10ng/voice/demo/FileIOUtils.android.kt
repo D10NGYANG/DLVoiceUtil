@@ -43,3 +43,12 @@ actual fun deleteFile(path: String) {
 actual fun readFile(path: String): ByteArray {
     return File(path).readBytes()
 }
+
+/**
+ * 写入文件
+ * @param path String
+ * @param data ByteArray
+ */
+actual fun writeFile(path: String, data: ByteArray) {
+    File(path).writeBytes(data)
+}

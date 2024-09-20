@@ -28,28 +28,33 @@ actual fun createPCMVoicePlayer(): PCMVoicePlayer {
 
 class PCMVoicePlayerIOS : PCMVoicePlayer() {
 
+    private var player: AVAudioPlayer? = null
+
     private val playerDelegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
         override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
             println("播放结束")
+            stopPlay()
         }
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    override fun start(data: ByteArray, sampleRate: Int) {
+    override fun startPlay(data: ByteArray, sampleRate: Int) {
+        if (player != null) throw Exception("Already playing")
         val wavData = pcmToWav(data).toNSData()
         AVAudioSession.sharedInstance().apply {
             setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)
             setActive(true, null)
         }
-        AVAudioPlayer(wavData, null).apply {
+        player = AVAudioPlayer(wavData, null).apply {
             delegate = playerDelegate
             prepareToPlay()
             play()
         }
     }
 
-    override fun stop() {
-        TODO("Not yet implemented")
+    override fun stopPlay() {
+        player?.stop()
+        player = null
     }
 
     private fun pcmToWav(pcmData: ByteArray): ByteArray {

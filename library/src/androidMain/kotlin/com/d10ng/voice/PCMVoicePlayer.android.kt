@@ -17,7 +17,7 @@ class PCMVoicePlayerAndroid : PCMVoicePlayer() {
 
     private var audioTrack: AudioTrack? = null
 
-    override fun start(data: ByteArray, sampleRate: Int) {
+    override fun startPlay(data: ByteArray, sampleRate: Int) {
         if (audioTrack != null) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             audioTrack = AudioTrack.Builder()
@@ -52,7 +52,7 @@ class PCMVoicePlayerAndroid : PCMVoicePlayer() {
         audioTrack?.play()
     }
 
-    override fun stop() {
+    override fun stopPlay() {
         try {
             audioTrack?.stop()
             audioTrack?.release()

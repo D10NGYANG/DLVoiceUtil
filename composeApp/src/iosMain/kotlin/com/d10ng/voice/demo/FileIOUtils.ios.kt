@@ -70,3 +70,13 @@ actual fun readFile(path: String): ByteArray {
     val data = NSData.dataWithContentsOfFile(path) ?: return byteArrayOf()
     return data.toByteArray()
 }
+
+/**
+ * 写入文件
+ * @param path String
+ * @param data ByteArray
+ */
+actual fun writeFile(path: String, data: ByteArray) {
+    val nsData = data.toNSData()
+    nsData.writeToFile(path, true)
+}

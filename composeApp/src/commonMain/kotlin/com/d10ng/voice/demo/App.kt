@@ -32,8 +32,11 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 private const val sampleRate = 48000
 private val recorder = createPCMVoiceRecorder(sampleRate)
+private val player = createPCMVoicePlayer()
 private val filePath = getCacheFilePath("audio.pcm")
 private val recordVolumeListFlow = MutableStateFlow(List(40) { 0f })
+private var recordData: ByteArray? = null
+private val playVolumeListFlow = MutableStateFlow(List(40) { 0f })
 
 @Composable
 @Preview
@@ -43,6 +46,10 @@ fun App() {
         val recordTimeText by recorder.getRecordTimeTextFlow().collectAsState("")
         val recordVolumeList by recordVolumeListFlow.collectAsState()
 
+        val playing by player.getPlayStatusFlow().collectAsState()
+        val playTimeText by player.getPlayTimeTextFlow().collectAsState("")
+        val playVolumeList by playVolumeListFlow.collectAsState()
+
         LaunchedEffect(Unit) {
             launch {
                 recorder.getRecordVolumeUpdateEvent().collect {
@@ -50,6 +57,14 @@ fun App() {
                     ls.add(it)
                     ls.removeAt(0)
                     recordVolumeListFlow.value = ls
+                }
+            }
+            launch {
+                player.getPlayVolumeUpdateEvent().collect {
+                    val ls = playVolumeListFlow.value.toMutableList()
+                    ls.add(it)
+                    ls.removeAt(0)
+                    playVolumeListFlow.value = ls
                 }
             }
         }
@@ -61,7 +76,7 @@ fun App() {
         ) {
             Button(onClick = {
                 if (recording) {
-                    recorder.stop()
+                    recordData = recorder.stop()
                 } else {
                     CoroutineScope(Dispatchers.IO).launch {
                         if (requestRecordAudioPermission()) {
@@ -76,10 +91,21 @@ fun App() {
             VolumeListBar(list = recordVolumeList)
 
             Button(onClick = {
-                val data = readFile(filePath)
-                createPCMVoicePlayer().start(data, sampleRate)
+                if (playing) {
+                    player.stop()
+                } else {
+                    recordData?.let { player.start(it, sampleRate) }
+                }
             }) {
-                Text(text = "播放录音")
+                Text(text = if (playing) "停止播放" else "播放录音")
+            }
+            Text(text = "播放时长: $playTimeText")
+            VolumeListBar(list = playVolumeList)
+
+            Button(onClick = {
+                recordData?.let { writeFile(filePath, it) }
+            }) {
+                Text(text = "保存文件到缓存目录")
             }
         }
     }

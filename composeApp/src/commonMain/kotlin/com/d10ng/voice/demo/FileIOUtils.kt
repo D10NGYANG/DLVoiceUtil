@@ -19,6 +19,13 @@ expect fun getCacheFilePath(fileName: String): String
 expect fun deleteFile(path: String)
 
 /**
+ * 写入文件
+ * @param path String
+ * @param data ByteArray
+ */
+expect fun writeFile(path: String, data: ByteArray)
+
+/**
  * 给文件添加内容
  * @param path String
  * @param data ByteArray

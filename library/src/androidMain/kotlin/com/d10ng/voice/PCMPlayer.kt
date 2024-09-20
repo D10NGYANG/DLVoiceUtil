@@ -22,6 +22,7 @@ import kotlin.math.roundToInt
 /**
  * PCM播放器
  */
+@Deprecated("Use PCMVoicePlayer instead")
 class PCMPlayer(
     private val encoding: Int = AudioFormat.ENCODING_PCM_16BIT,
     private val sampleRateInHz: Int = 48000,

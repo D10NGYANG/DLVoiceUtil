@@ -40,7 +40,7 @@ class PCMVoiceRecorderIOS(
     @OptIn(ExperimentalForeignApi::class)
     override fun startRecord(): Flow<ShortArray> {
         if (audioEngine != null) throw Exception("Already recording")
-        val bufferSizeInBytes = sampleRate * 2 * 1 / 60
+        val bufferSizeInShorts = sampleRate * 2 * 1 / 25
         val audioSession = AVAudioSession.sharedInstance()
         audioSession.setCategory(
             AVAudioSessionCategoryPlayAndRecord,
@@ -53,7 +53,8 @@ class PCMVoiceRecorderIOS(
         inputNode = audioEngine?.inputNode
         val format = AVAudioFormat(AVAudioPCMFormatInt16, sampleRate.toDouble(), 1u, false)
         val flow = callbackFlow {
-            inputNode?.installTapOnBus(0u, bufferSizeInBytes.toUInt(), format) { buffer, _ ->
+            // 设置bufferSizeInShorts无效，暂时不管
+            inputNode?.installTapOnBus(0u, bufferSizeInShorts.toUInt(), format) { buffer, _ ->
                 buffer ?: return@installTapOnBus
                 val channelData = buffer.int16ChannelData
                 val frameCount = buffer.frameLength.toInt()

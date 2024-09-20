@@ -36,12 +36,12 @@ class PCMVoiceRecorderAndroid(
         // MediaRecorder.AudioSource.MIC：指定音频源为设备的麦克风
         // AudioFormat.CHANNEL_IN_MONO：指定单声道
         // AudioFormat.ENCODING_PCM_16BIT：指定采样位数为16位
-        // 每秒数据量为 声道数 * 采样频率 * 采样位数 / 8，那么在60帧的情况下，每帧数据量为每秒数据量的1/60
+        // 每秒数据量为 声道数 * 采样频率 * 采样位数 / 8，那么在25帧的情况下，每帧数据量为每秒数据量的1/25
         val bufferSizeInBytes = AudioRecord.getMinBufferSize(
             sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT
-        ).coerceAtLeast(sampleRate * 2 * 1 / 60)
+        ).coerceAtLeast(sampleRate * 2 * 1 / 25)
         audioRecorder = AudioRecord(
             MediaRecorder.AudioSource.MIC, sampleRate,
             AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes

@@ -5,6 +5,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.audiofx.NoiseSuppressor
 import androidx.annotation.RequiresPermission
+import com.d10ng.common.base.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,6 +25,7 @@ import kotlin.math.roundToInt
 /**
  * PCM录音器
  */
+@Deprecated("use PCMVoiceRecorder instead")
 class PCMRecorder(
     private val audioSource: Int = MediaRecorder.AudioSource.MIC,
     private val sampleRateInHz: Int = 48000,

@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompileCommon
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,7 +9,7 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.2.1"
+version = "0.2.2"
 
 kotlin {
     androidTarget {
@@ -32,6 +33,16 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             // 协程 Android
             implementation(libs.kotlinx.coroutines.android)
+        }
+    }
+    metadata {
+        compilations.all {
+            val compilationName = name
+            compileTaskProvider.configure {
+                if (this is KotlinCompileCommon) {
+                    moduleName = "${project.group}:${rootProject.name}_$compilationName"
+                }
+            }
         }
     }
 }
@@ -61,7 +72,7 @@ afterEvaluate {
     publishing {
         publications {
             withType(MavenPublication::class) {
-                artifactId = artifactId.replace("library", "DLVoiceUtil")
+                artifactId = artifactId.replace("library", rootProject.name)
                 artifact(tasks["javadocJar"])
             }
         }

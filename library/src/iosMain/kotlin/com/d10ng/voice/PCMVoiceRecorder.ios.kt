@@ -81,3 +81,11 @@ class PCMVoiceRecorderIOS(
         return flow
     }
 }
+
+class PCMVoiceRecorderIOS1(
+    private val sampleRate: Int
+) : PCMVoiceRecorder(sampleRate) {
+    override fun startRecord(): Flow<ShortArray> {
+        TODO("Not yet implemented")
+    }
+}

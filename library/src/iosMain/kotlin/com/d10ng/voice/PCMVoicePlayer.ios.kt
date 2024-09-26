@@ -239,15 +239,19 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
 
     @OptIn(ExperimentalForeignApi::class)
     override fun stopPlay() {
-        if (audioUnit == null) return
+        memScoped {
+            if (audioUnit == null) return
 
-        AudioOutputUnitStop(audioUnit)
-        AudioUnitUninitialize(audioUnit)
-        AudioComponentInstanceDispose(audioUnit)
-        audioUnit = null
+            runCatching {
+                AudioOutputUnitStop(audioUnit)
+                AudioUnitUninitialize(audioUnit)
+                AudioComponentInstanceDispose(audioUnit)
+            }.onFailure { it.printStackTrace() }
+            audioUnit = null
 
-        stableRef?.dispose()
-        stableRef = null
+            stableRef?.dispose()
+            stableRef = null
+        }
     }
 
 }

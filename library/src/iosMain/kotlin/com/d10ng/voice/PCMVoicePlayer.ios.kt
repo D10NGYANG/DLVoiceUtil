@@ -239,18 +239,42 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
 
     @OptIn(ExperimentalForeignApi::class)
     override fun stopPlay() {
-        memScoped {
-            if (audioUnit == null) return
+        if (audioUnit == null) return
 
+        dispatch_async(dispatch_get_main_queue()) {
             runCatching {
-                AudioOutputUnitStop(audioUnit)
-                AudioUnitUninitialize(audioUnit)
-                AudioComponentInstanceDispose(audioUnit)
-            }.onFailure { it.printStackTrace() }
-            audioUnit = null
+                memScoped {
+                    var status: OSStatus
 
-            stableRef?.dispose()
-            stableRef = null
+                    // Stop the audio unit
+                    status = AudioOutputUnitStop(audioUnit)
+                    if (status != 0) {
+                        println("Failed to stop audio unit: $status")
+                        return@runCatching
+                    }
+
+                    // Uninitialize the audio unit
+                    status = AudioUnitUninitialize(audioUnit)
+                    if (status != 0) {
+                        println("Failed to uninitialize audio unit: $status")
+                        return@runCatching
+                    }
+
+                    // Dispose of the audio unit
+                    status = AudioComponentInstanceDispose(audioUnit)
+                    if (status != 0) {
+                        println("Failed to dispose audio unit: $status")
+                        return@runCatching
+                    }
+
+                    audioUnit = null
+
+                    stableRef?.dispose()
+                    stableRef = null
+
+                    println("Audio unit successfully stopped and disposed")
+                }
+            }.onFailure { it.printStackTrace() }
         }
     }
 
@@ -288,9 +312,7 @@ fun playbackCallback(
         audioPlayer.currentIndex += frameCount
 
         if (audioPlayer.currentIndex >= audioPlayer.audioBuffer.size) {
-            dispatch_async(dispatch_get_main_queue()) {
-                audioPlayer.stopPlay()
-            }
+            audioPlayer.stopPlay()
         }
     }
     return kAudio_NoError

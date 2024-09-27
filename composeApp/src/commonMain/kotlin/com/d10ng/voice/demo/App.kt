@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-private const val sampleRate = 48000
+private const val sampleRate = 8000
 private val recorder = createPCMVoiceRecorder(sampleRate)
 private val player = createPCMVoicePlayer()
 private val filePath = getCacheFilePath("audio.pcm")

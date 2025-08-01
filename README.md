@@ -1,7 +1,8 @@
 # DLVoiceUtil
-Android音频录音与播放工具，目前支持PCM格式语音文件；
 
-*版本*：`0.2.7`
+音频录音与播放工具，目前支持PCM格式语音文件；
+
+*版本*：`0.2.8`
 
 > 从`0.2.0`版本开始调整为kotlin multiplatform项目，支持Android、iOS，并且只支持16bit、单声道的PCM格式录制。
 
@@ -26,7 +27,7 @@ allprojects {
 dependencies {
     implementation("com.github.D10NGYANG:DLVoiceUtil:$ver")
     // 通用计算
-    implementation("com.github.D10NGYANG:DLCommonUtil:0.5.2")
+    implementation("com.github.D10NGYANG:DLCommonUtil:0.7.0")
 }
 ```
 3 混淆

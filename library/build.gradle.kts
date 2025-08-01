@@ -2,13 +2,13 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
     id("maven-publish")
 }
 
 group = "com.github.D10NGYANG"
-version = "0.2.7"
+version = "0.2.8"
 
 kotlin {
     androidTarget {
@@ -23,7 +23,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // 协程
-            implementation(libs.kotlinx.coroutines)
+            implementation(libs.kotlinx.coroutines.core)
             // 通用计算
             implementation(libs.dl.common)
         }

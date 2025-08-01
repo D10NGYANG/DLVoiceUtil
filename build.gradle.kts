@@ -1,10 +1,10 @@
 plugins {
-    alias(libs.plugins.androidApplication) apply false
-    alias(libs.plugins.androidLibrary) apply false
-    alias(libs.plugins.jetbrainsCompose) apply false
-    alias(libs.plugins.compose.compiler) apply false
-    alias(libs.plugins.kotlinMultiplatform) apply false
-    id("com.github.ben-manes.versions") version "0.51.0"
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.compose) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    id("com.github.ben-manes.versions") version "0.52.0"
 }
 
 fun isNonStable(version: String): Boolean {

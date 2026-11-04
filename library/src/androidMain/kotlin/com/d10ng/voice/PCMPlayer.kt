@@ -98,9 +98,9 @@ class PCMPlayer(
         audioTrack?.write(data, 0, data.size)
         audioTrack?.play()
         // 每毫秒字节数
-        val perByte = sampleRateInHz * 2 / 1000
+        val bytesPerFrame = Integer.bitCount(channelConfig) * if (encoding == AudioFormat.ENCODING_PCM_8BIT) 1 else 2
         // 通过PCM音频字节数据计算音频长度，单位为毫秒
-        val duration = data.size / perByte
+        val duration = data.size.toLong() * 1000 / (sampleRateInHz * bytesPerFrame)
         // 监听设备是否播放完毕
         volumeTimer = Timer().apply {
             val startTime = System.currentTimeMillis()
@@ -115,7 +115,7 @@ class PCMPlayer(
                 val volume = if (offsetTime == 0L) 0
                 else {
                     // 拿到当前时间的字节数据
-                    var index = minOf(offsetTime.toInt() * perByte, data.size)
+                    var index = minOf((offsetTime * sampleRateInHz / 1000 * bytesPerFrame).coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), data.size)
                     index = if (index % 2 == 1) index - 1 else index
                     val bytes = data.copyOfRange(lastIndex, index)
                     lastIndex = index

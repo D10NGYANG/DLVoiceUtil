@@ -1,0 +1,123 @@
+{
+  "version": "0.3.0",
+  "date": "2026-11-04",
+  "tests": [
+    {
+      "task": "testAndroidHostTest",
+      "suite": "com.d10ng.voice.PCMVoiceTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "task": "iosSimulatorArm64Test",
+      "suite": "iosSimulatorArm64Test.com.d10ng.voice.PCMNativeBufferTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "task": "iosSimulatorArm64Test",
+      "suite": "iosSimulatorArm64Test.com.d10ng.voice.PCMVoiceTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "publication_artifacts": [
+    {
+      "path": "DLVoiceUtil/0.3.0/DLVoiceUtil-0.3.0-javadoc.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "DLVoiceUtil/0.3.0/DLVoiceUtil-0.3.0-sources.jar",
+      "sha256": "25a3bd598b38b637818875a2e46649f1ba6f721c2dd20494ca6edd9ccc252004"
+    },
+    {
+      "path": "DLVoiceUtil/0.3.0/DLVoiceUtil-0.3.0.jar",
+      "sha256": "f49165cc5ee45f13f12ebf8f88138d999a570fb8b723c05d49ff58f3a95bfd79"
+    },
+    {
+      "path": "DLVoiceUtil/0.3.0/DLVoiceUtil-0.3.0.module",
+      "sha256": "ef13da1afe9322308928bfd3b5dff8233d553da7ca0719c7fae8f7451b235283"
+    },
+    {
+      "path": "DLVoiceUtil/0.3.0/DLVoiceUtil-0.3.0.pom",
+      "sha256": "751a58171bb355f0cb7a90aa1f9b35d2d4071238a4802d48067260979e4ab6b0"
+    },
+    {
+      "path": "DLVoiceUtil-android/0.3.0/DLVoiceUtil-android-0.3.0-javadoc.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "DLVoiceUtil-android/0.3.0/DLVoiceUtil-android-0.3.0-sources.jar",
+      "sha256": "d21034a32eedc05e883165a47738b22e0b838acf910c8256ae79ce57d775c45f"
+    },
+    {
+      "path": "DLVoiceUtil-android/0.3.0/DLVoiceUtil-android-0.3.0.aar",
+      "sha256": "e25e1cd395055009f457617b5a2c102750aa08d84c0eea2d84d24a8d0aa40c87"
+    },
+    {
+      "path": "DLVoiceUtil-android/0.3.0/DLVoiceUtil-android-0.3.0.module",
+      "sha256": "636bd03a65dd1c25dffdefed47b4446a6f792d5cf3bee91fd907a64a5993bdce"
+    },
+    {
+      "path": "DLVoiceUtil-android/0.3.0/DLVoiceUtil-android-0.3.0.pom",
+      "sha256": "f35a3679cba9d8a8fea6aa5af78014428da9e130c0cf299d3566d69bff0c9083"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0-javadoc.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0-metadata.jar",
+      "sha256": "2bc57d1e39469145d856598aaf0fff3d718b7df45695e3374352a9bb1f46c096"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0-sources.jar",
+      "sha256": "18b16d8e887e4076488637a5c553be986afdbc754debd23611e5d175766de991"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0.klib",
+      "sha256": "091467cfc0ffabe64d539c3cd2f2ebbcd329df0e3ee57f72959c2a5abf0e39fb"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0.module",
+      "sha256": "9b23492a41348a64f511280a3038cc879f97a83e5d39c1ac990fd5e0a4601d83"
+    },
+    {
+      "path": "DLVoiceUtil-iosarm64/0.3.0/DLVoiceUtil-iosarm64-0.3.0.pom",
+      "sha256": "da79ddb7273fd01682c0bc6f790c9319e524c687c1e939f4d7ae7578850b3d11"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0-javadoc.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0-metadata.jar",
+      "sha256": "2bc57d1e39469145d856598aaf0fff3d718b7df45695e3374352a9bb1f46c096"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0-sources.jar",
+      "sha256": "18b16d8e887e4076488637a5c553be986afdbc754debd23611e5d175766de991"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0.klib",
+      "sha256": "8daeca7e72d6b769227998750b044a1c46227bdefccc2269d4bb2e0a670242ec"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0.module",
+      "sha256": "728d1350427f501d9f1dab7d1dc50f865ba9f8e676fd11e9ab326c03435f6a04"
+    },
+    {
+      "path": "DLVoiceUtil-iossimulatorarm64/0.3.0/DLVoiceUtil-iossimulatorarm64-0.3.0.pom",
+      "sha256": "fbafd4a20cd0bfbee40d7926b99d20302b2cb4bc5bba5df58897dc50045335c7"
+    }
+  ],
+  "checks": [
+    "Android debug/release and lint passed",
+    "Independent Maven consumer compiled Android, iosArm64 and iosSimulatorArm64",
+    "All published checksums and module file hashes verified",
+    "User documentation contains installation URL without repository visibility classifications"
+  ]
+}

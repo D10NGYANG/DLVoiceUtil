@@ -14,6 +14,13 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,24 +30,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.d10ng.voice.createPCMVoicePlayer
 import com.d10ng.voice.createPCMVoiceRecorder
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 private const val sampleRate = 8000
-private val recorder = createPCMVoiceRecorder(sampleRate)
-private val player = createPCMVoicePlayer()
-private val filePath = getCacheFilePath("audio.pcm")
-private val recordVolumeListFlow = MutableStateFlow(List(40) { 0f })
-private var recordData: ByteArray? = null
-private val playVolumeListFlow = MutableStateFlow(List(40) { 0f })
-
 @Composable
 @Preview
 fun App() {
+    val recorder = remember { createPCMVoiceRecorder(sampleRate) }
+    val player = remember { createPCMVoicePlayer() }
+    val scope = rememberCoroutineScope()
+    var recordData by remember { mutableStateOf<ByteArray?>(null) }
+    val recordVolumeListFlow = remember { MutableStateFlow(List(40) { 0f }) }
+    val playVolumeListFlow = remember { MutableStateFlow(List(40) { 0f }) }
+    var busy by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+    var action by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val recordError by recorder.getErrorFlow().collectAsState()
+    val playError by player.getErrorFlow().collectAsState()
+    fun finishSession() {
+        action?.cancel()
+        busy = false
+        runCatching {
+            try {
+                if (recorder.getRecordStatusFlow().value) recordData = recorder.stop()
+                else recorder.stop()
+            } finally { player.stop() }
+        }.onFailure { message = it.message ?: "停止失败" }
+    }
+    DisposableEffect(Unit) { onDispose { finishSession() } }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { finishSession() }
+
     MaterialTheme {
         val recording by recorder.getRecordStatusFlow().collectAsState()
         val recordTimeText by recorder.getRecordTimeTextFlow().collectAsState("")
@@ -74,15 +97,21 @@ fun App() {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Button(onClick = {
-                if (recording) {
-                    recordData = recorder.stop()
-                } else {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (requestRecordAudioPermission()) {
+            Button(enabled = !busy && !playing, onClick = {
+                busy = true
+                message = ""
+                action = scope.launch {
+                    try {
+                        if (recording) recordData = recorder.stopAndGetData()
+                        else if (requestRecordAudioPermission()) {
+                            coroutineContext.ensureActive()
                             recorder.start()
-                        }
-                    }
+                        } else message = "未获得麦克风权限"
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        message = e.message ?: "录音失败"
+                    } finally { busy = false }
                 }
             }) {
                 Text(text = if (recording) "停止录音" else "开始录音")
@@ -90,23 +119,34 @@ fun App() {
             Text(text = "录音时长: $recordTimeText")
             VolumeListBar(list = recordVolumeList)
 
-            Button(onClick = {
-                if (playing) {
-                    player.stop()
-                } else {
-                    recordData?.let { player.start(it, sampleRate) }
-                }
+            Button(enabled = !busy && !recording && (playing || recordData?.isNotEmpty() == true), onClick = {
+                runCatching {
+                    if (playing) player.stop() else recordData?.let { player.start(it, sampleRate) }
+                }.onFailure { message = it.message ?: "播放失败" }
             }) {
                 Text(text = if (playing) "停止播放" else "播放录音")
             }
             Text(text = "播放时长: $playTimeText")
             VolumeListBar(list = playVolumeList)
 
-            Button(onClick = {
-                recordData?.let { writeFile(filePath, it) }
-            }) {
-                Text(text = "保存文件到缓存目录")
-            }
+            Button(enabled = !busy && !recording && recordData?.isNotEmpty() == true, onClick = {
+                val bytes = recordData ?: return@Button
+                busy = true
+                action = scope.launch {
+                    try {
+                        withContext(Dispatchers.IO) { writeFile(getCacheFilePath("audio.pcm"), bytes) }
+                        message = "已保存 audio.pcm"
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        message = e.message ?: "保存失败"
+                    } finally { busy = false }
+                }
+            }) { Text("保存文件到缓存目录") }
+            val error = recordError ?: playError
+            if (error != null) Text(error.message ?: "音频操作失败")
+            if (message.isNotEmpty() && message != error?.message) Text(message)
+
         }
     }
 }
@@ -133,7 +173,7 @@ fun VolumeListBar(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight(it)
+                        .fillMaxHeight(it.coerceIn(0f, 1f))
                         .width(4.dp)
                         .background(Color.Green)
                 )

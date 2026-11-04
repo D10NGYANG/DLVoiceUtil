@@ -1,108 +1,91 @@
 package com.d10ng.voice
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlin.math.abs
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.time.TimeSource
 
-/**
- * PCM音频播放器
- * @Author d10ng
- * @Date 2024/9/19 10:06
- */
+/** Plays mono, little-endian, 16-bit PCM. */
 abstract class PCMVoicePlayer {
-
-    // 播放状态
     private val playingFlow = MutableStateFlow(false)
-
-    // 播放时间，单位为毫秒
     private val playTimeFlow = MutableStateFlow(0L)
-    private val playTimeTextFlow =
-        playTimeFlow.map { it / 1000 }.distinctUntilChanged().map { secondTime2Text(it) }
-
-    // 播放音量
-    private val playVolumeFlow = MutableSharedFlow<Float>()
+    private val playTimeTextFlow = playTimeFlow.map { it / 1000 }.distinctUntilChanged().map { secondTime2Text(it) }
+    private val playVolumeFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val errorFlow = MutableStateFlow<Throwable?>(null)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutex = Mutex()
+    private var updateVolumeJob: Job? = null
 
     fun getPlayStatusFlow() = playingFlow.asStateFlow()
     fun getPlayTimeFlow() = playTimeFlow.asStateFlow()
     fun getPlayTimeTextFlow() = playTimeTextFlow
     fun getPlayVolumeUpdateEvent() = playVolumeFlow.asSharedFlow()
+    fun getErrorFlow() = errorFlow.asStateFlow()
 
-    private val scope = CoroutineScope(Dispatchers.IO)
-    private var updateVolumeJob: Job? = null
-
-    fun start(data: ByteArray, sampleRate: Int) {
-        startPlay(data, sampleRate)
-        playingFlow.value = true
-        playTimeFlow.value = 0
-        // 每毫秒字节数
-        val perByte = sampleRate * 2 / 1000
-        // 通过PCM音频字节数据计算音频长度，单位为毫秒
-        val duration = data.size / perByte
-        // 更新音量任务
-        updateVolumeJob = scope.launch {
-            val startTime = getCurrentTimestamp()
-            var lastIndex = 0
-            var offsetTime = 0L
-            while (true) {
-                if (offsetTime >= duration) {
-                    stop()
-                    return@launch
-                }
-                val volume = if (offsetTime == 0L) 0f
-                else {
-                    // 拿到当前时间的字节数据
-                    var index = minOf(offsetTime.toInt() * perByte, data.size)
-                    index = if (index % 2 == 1) index - 1 else index
-                    val bytes = data.copyOfRange(lastIndex, index)
-                    lastIndex = index
-                    var total = 0.0
-                    for (i in bytes.indices step 2) {
-                        val arr = byteArrayOf(bytes[i], bytes[i + 1])
-                        total += abs(arr.toShort().toDouble())
+    fun start(data: ByteArray, sampleRate: Int) = runBlocking {
+        require(sampleRate > 0) { "Unsupported sample rate: $sampleRate" }
+        require(data.isNotEmpty() && data.size % 2 == 0) { "Expected non-empty 16-bit PCM" }
+        mutex.withLock {
+            check(!playingFlow.value) { "Already playing" }
+            errorFlow.value = null
+            try {
+                startPlay(data, sampleRate)
+            } catch (e: Exception) {
+                runCatching { stopPlay() }.exceptionOrNull()?.let(e::addSuppressed)
+                errorFlow.value = e
+                throw e
+            }
+            playingFlow.value = true
+            playTimeFlow.value = 0
+            val started = TimeSource.Monotonic.markNow()
+            val duration = pcmDurationMillis(data.size, sampleRate)
+            updateVolumeJob = scope.launch {
+                var lastIndex = 0
+                try {
+                    while (isActive) {
+                        val finished = mutex.withLock {
+                            currentCoroutineContext().ensureActive()
+                            val elapsed = started.elapsedNow().inWholeMilliseconds
+                            val index = minOf(elapsed * sampleRate / 1000 * 2, data.size.toLong()).toInt()
+                            playVolumeFlow.tryEmit(pcmVolume(data, lastIndex, index))
+                            lastIndex = index
+                            playTimeFlow.value = minOf(elapsed, duration)
+                            if (isPlaybackComplete() ?: (elapsed >= duration)) {
+                                stopPlay()
+                                playingFlow.value = false
+                                true
+                            } else false
+                        }
+                        if (finished) break
+                        delay(16)
                     }
-                    (abs(total / (bytes.size / 2)) / Short.MAX_VALUE * 5).toFloat()
-                        .coerceAtMost(100f)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    mutex.withLock {
+                        currentCoroutineContext().ensureActive()
+                        errorFlow.value = e
+                        runCatching { stopPlay() }.exceptionOrNull()?.let(e::addSuppressed)
+                        playingFlow.value = false
+                    }
                 }
-                playVolumeFlow.emit(volume)
-                offsetTime = getCurrentTimestamp() - startTime
-                playTimeFlow.value = offsetTime
-                delay(16)
             }
         }
     }
 
-    fun stop() {
-        stopPlay()
-        updateVolumeJob?.cancel()
-        updateVolumeJob = null
-        playingFlow.value = false
+    fun stop() = runBlocking {
+        mutex.withLock {
+            updateVolumeJob?.cancel()
+            updateVolumeJob = null
+            try { stopPlay() } finally { playingFlow.value = false }
+        }
     }
 
-    /**
-     * 开始播放
-     * @param data ByteArray 音频数据
-     * @param sampleRate Int 采样率
-     */
     internal abstract fun startPlay(data: ByteArray, sampleRate: Int)
-
-    /**
-     * 停止播放
-     */
     internal abstract fun stopPlay()
+    internal open fun isPlaybackComplete(): Boolean? = null
 }
 
-/**
- * 创建PCM播放器
- * @return PCMVoicePlayer
- */
 expect fun createPCMVoicePlayer(): PCMVoicePlayer

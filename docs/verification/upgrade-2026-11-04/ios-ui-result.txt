@@ -1,0 +1,19 @@
+    t =    25.23s         Checking existence of `"开始录音" Button`
+    t =    25.28s Terminate com.d10ng.voice.demo.DLVoiceUtil:74530
+    t =    26.33s Tear Down
+Test Case '-[AudioFlowTests.AudioFlowTests testRecordPlaySaveAndRestart]' passed (26.388 seconds).
+Test Suite 'AudioFlowTests' passed at 2026-11-04 09:42:23.593.
+	 Executed 1 test, with 0 failures (0 unexpected) in 26.388 (26.389) seconds
+Test Suite 'AudioFlowTests.xctest' passed at 2026-11-04 09:42:23.594.
+	 Executed 1 test, with 0 failures (0 unexpected) in 26.388 (26.390) seconds
+Test Suite 'All tests' passed at 2026-11-04 09:42:23.594.
+	 Executed 1 test, with 0 failures (0 unexpected) in 26.388 (26.391) seconds
+2026-11-04 09:42:23.876 xcodebuild[74465:2708127] [MT] IDETestOperationsObserverDebug: 28.917 elapsed -- Testing started completed.
+2026-11-04 09:42:23.877 xcodebuild[74465:2708127] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-04 09:42:23.877 xcodebuild[74465:2708127] [MT] IDETestOperationsObserverDebug: 28.917 sec, +28.917 sec -- end
+
+Test session results, code coverage, and logs:
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

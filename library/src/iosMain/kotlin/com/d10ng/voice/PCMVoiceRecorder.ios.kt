@@ -17,16 +17,9 @@ import kotlinx.cinterop.sizeOf
 import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.value
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import platform.AVFAudio.AVAudioEngine
-import platform.AVFAudio.AVAudioFormat
-import platform.AVFAudio.AVAudioInputNode
-import platform.AVFAudio.AVAudioPCMFormatInt16
 import platform.AVFAudio.AVAudioSession
-import platform.AVFAudio.AVAudioSessionCategoryPlayAndRecord
 import platform.AVFAudio.AVAudioSessionCategoryRecord
 import platform.AVFAudio.AVAudioSessionModeDefault
 import platform.AVFAudio.setActive
@@ -78,63 +71,12 @@ actual fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder {
  * @property sampleRate Int
  * @constructor
  */
-class PCMVoiceRecorderIOS(
+class PCMVoiceRecorderIOS(sampleRate: Int) : PCMVoiceRecorderIOS1(sampleRate)
+
+open class PCMVoiceRecorderIOS1(
     private val sampleRate: Int
 ) : PCMVoiceRecorder(sampleRate) {
 
-    private var audioEngine: AVAudioEngine? = null
-    private var inputNode: AVAudioInputNode? = null
-
-    @OptIn(ExperimentalForeignApi::class)
-    override fun startRecord(): Flow<ShortArray> {
-        if (audioEngine != null) throw Exception("Already recording")
-        val bufferSizeInShorts = sampleRate * 2 * 1 / 25
-        val audioSession = AVAudioSession.sharedInstance()
-        audioSession.setCategory(
-            AVAudioSessionCategoryPlayAndRecord,
-            AVAudioSessionModeDefault,
-            0u,
-            null
-        )
-        audioSession.setActive(true, null)
-        audioEngine = AVAudioEngine()
-        inputNode = audioEngine?.inputNode
-        val format = AVAudioFormat(AVAudioPCMFormatInt16, sampleRate.toDouble(), 1u, false)
-        val flow = callbackFlow {
-            // 设置bufferSizeInShorts无效，暂时不管
-            inputNode?.installTapOnBus(0u, bufferSizeInShorts.toUInt(), format) { buffer, _ ->
-                buffer ?: return@installTapOnBus
-                val channelData = buffer.int16ChannelData
-                val frameCount = buffer.frameLength.toInt()
-                val pcmBuffer = ShortArray(frameCount)
-                channelData?.let { data ->
-                    val samples = data[0]?.reinterpret<ShortVar>()
-                    samples?.let {
-                        for (i in 0 until frameCount) {
-                            pcmBuffer[i] = it[i]
-                        }
-                    }
-                }
-                trySend(pcmBuffer)
-            }
-            awaitClose {
-                inputNode?.removeTapOnBus(0u)
-                audioEngine?.stop()
-                audioEngine = null
-                inputNode = null
-            }
-        }
-        audioEngine?.prepare()
-        audioEngine?.startAndReturnError(null)
-        return flow
-    }
-}
-
-class PCMVoiceRecorderIOS1(
-    private val sampleRate: Int
-) : PCMVoiceRecorder(sampleRate) {
-
-    private var isRecording = false
 
     @OptIn(ExperimentalForeignApi::class)
     var audioUnit: AudioComponentInstance? = null
@@ -142,89 +84,89 @@ class PCMVoiceRecorderIOS1(
     @OptIn(ExperimentalForeignApi::class)
     private var stableRef: StableRef<PCMVoiceRecorderIOS1>? = null
 
-    val audioDataChannel = Channel<ShortArray>(Channel.UNLIMITED)
+    var audioDataChannel = Channel<ShortArray>(64)
+        private set
 
     @OptIn(ExperimentalForeignApi::class)
-    override fun startRecord(): Flow<ShortArray> {
+    override fun startRecord(): Flow<ShortArray> = flow {
         if (audioUnit != null) throw Exception("Already recording")
-        AVAudioSession.sharedInstance().apply {
-            setCategory(AVAudioSessionCategoryRecord, AVAudioSessionModeDefault, 0u, null)
-            setActive(true, null)
-        }
-        memScoped {
-            val audioComponentDescription = alloc<AudioComponentDescription>().apply {
-                componentType = kAudioUnitType_Output
-                componentSubType = kAudioUnitSubType_RemoteIO
-                componentManufacturer = kAudioUnitManufacturer_Apple
-                componentFlags = 0u
-                componentFlagsMask = 0u
+        audioDataChannel = Channel(64)
+        try {
+            AVAudioSession.sharedInstance().apply {
+                check(setCategory(AVAudioSessionCategoryRecord, AVAudioSessionModeDefault, 0u, null)) { "Cannot configure audio session" }
+                check(setActive(true, null)) { "Cannot activate audio session" }
             }
-            val audioComponent = AudioComponentFindNext(null, audioComponentDescription.ptr)
-            val audioUnitVar = alloc<AudioComponentInstanceVar>()
-            var status = AudioComponentInstanceNew(audioComponent, audioUnitVar.ptr)
-            println("status1 = $status")
-            audioUnit = audioUnitVar.value
-            val one = alloc<UInt32Var>().apply { value = 1u }
-            status = AudioUnitSetProperty(
-                audioUnit!!,
-                kAudioOutputUnitProperty_EnableIO,
-                kAudioUnitScope_Input,
-                1u,
-                one.ptr,
-                sizeOf<UInt32Var>().convert()
-            )
-            println("status2 = $status")
-            val asbd = alloc<AudioStreamBasicDescription>().apply {
-                mSampleRate = sampleRate.toDouble()
-                mFormatID = kAudioFormatLinearPCM
-                mFormatFlags = (kAudioFormatFlagIsSignedInteger or kAudioFormatFlagIsPacked)
-                mBytesPerPacket = 2u
-                mFramesPerPacket = 1u
-                mBytesPerFrame = 2u
-                mChannelsPerFrame = 1u
-                mBitsPerChannel = 16u
-                mReserved = 0u
-            }
-            status = AudioUnitSetProperty(
-                audioUnit,
-                kAudioUnitProperty_StreamFormat,
-                kAudioUnitScope_Output,
-                1u,
-                asbd.ptr,
-                sizeOf<AudioStreamBasicDescription>().convert()
-            )
-            println("status3 = $status")
-            stableRef = StableRef.create(this@PCMVoiceRecorderIOS1)
-            val selfPtr = stableRef!!.asCPointer()
-            val callbackStruct = alloc<AURenderCallbackStruct>().apply {
-                inputProc = staticCFunction(::recordingCallback)
-                inputProcRefCon = selfPtr
-            }
-            status = AudioUnitSetProperty(
-                audioUnit,
-                kAudioOutputUnitProperty_SetInputCallback,
-                kAudioUnitScope_Global,
-                0u,
-                callbackStruct.ptr,
-                sizeOf<AURenderCallbackStruct>().convert()
-            )
-            println("status4 = $status")
-            status = AudioUnitInitialize(audioUnit)
-            println("status5 = $status")
-            status = AudioOutputUnitStart(audioUnit)
-            println("status6 = $status")
-            isRecording = true
-            return flow {
-                try {
-                    while (isRecording) {
-                        val audioData = audioDataChannel.receive()
-                        emit(audioData)
-                    }
-                } finally {
-                    isRecording = false
-                    cleanUpAudioUnit()
+            memScoped {
+                val audioComponentDescription = alloc<AudioComponentDescription>().apply {
+                    componentType = kAudioUnitType_Output
+                    componentSubType = kAudioUnitSubType_RemoteIO
+                    componentManufacturer = kAudioUnitManufacturer_Apple
+                    componentFlags = 0u
+                    componentFlagsMask = 0u
                 }
+                val audioComponent = AudioComponentFindNext(null, audioComponentDescription.ptr)
+                val audioUnitVar = alloc<AudioComponentInstanceVar>()
+                var status = AudioComponentInstanceNew(audioComponent, audioUnitVar.ptr)
+                audioUnit = audioUnitVar.value
+                check(status == 0) { "AudioComponentInstanceNew failed: $status" }
+                val one = alloc<UInt32Var>().apply { value = 1u }
+                status = AudioUnitSetProperty(
+                    audioUnit!!,
+                    kAudioOutputUnitProperty_EnableIO,
+                    kAudioUnitScope_Input,
+                    1u,
+                    one.ptr,
+                    sizeOf<UInt32Var>().convert()
+                )
+                check(status == 0) { "AudioUnit setup step 2 failed: $status" }
+                val zero = alloc<UInt32Var>().apply { value = 0u }
+                status = AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO,
+                    kAudioUnitScope_Output, 0u, zero.ptr, sizeOf<UInt32Var>().convert())
+                check(status == 0) { "Cannot disable recording output: $status" }
+
+                val asbd = alloc<AudioStreamBasicDescription>().apply {
+                    mSampleRate = sampleRate.toDouble()
+                    mFormatID = kAudioFormatLinearPCM
+                    mFormatFlags = (kAudioFormatFlagIsSignedInteger or kAudioFormatFlagIsPacked)
+                    mBytesPerPacket = 2u
+                    mFramesPerPacket = 1u
+                    mBytesPerFrame = 2u
+                    mChannelsPerFrame = 1u
+                    mBitsPerChannel = 16u
+                    mReserved = 0u
+                }
+                status = AudioUnitSetProperty(
+                    audioUnit,
+                    kAudioUnitProperty_StreamFormat,
+                    kAudioUnitScope_Output,
+                    1u,
+                    asbd.ptr,
+                    sizeOf<AudioStreamBasicDescription>().convert()
+                )
+                check(status == 0) { "AudioUnit setup step 3 failed: $status" }
+                stableRef = StableRef.create(this@PCMVoiceRecorderIOS1)
+                val selfPtr = stableRef!!.asCPointer()
+                val callbackStruct = alloc<AURenderCallbackStruct>().apply {
+                    inputProc = staticCFunction(::recordingCallback)
+                    inputProcRefCon = selfPtr
+                }
+                status = AudioUnitSetProperty(
+                    audioUnit,
+                    kAudioOutputUnitProperty_SetInputCallback,
+                    kAudioUnitScope_Global,
+                    0u,
+                    callbackStruct.ptr,
+                    sizeOf<AURenderCallbackStruct>().convert()
+                )
+                check(status == 0) { "AudioUnit setup step 4 failed: $status" }
+                status = AudioUnitInitialize(audioUnit)
+                check(status == 0) { "AudioUnit setup step 5 failed: $status" }
+                status = AudioOutputUnitStart(audioUnit)
+                check(status == 0) { "AudioUnit setup step 6 failed: $status" }
             }
+            for (audioData in audioDataChannel) emit(audioData)
+        } finally {
+            try { cleanUpAudioUnit() } finally { audioDataChannel.cancel() }
         }
     }
 
@@ -233,9 +175,11 @@ class PCMVoiceRecorderIOS1(
         if (audioUnit != null) {
             AudioOutputUnitStop(audioUnit)
             AudioUnitUninitialize(audioUnit)
-            AudioComponentInstanceDispose(audioUnit)
+            check(AudioComponentInstanceDispose(audioUnit) == 0) { "Cannot dispose recording AudioUnit" }
             audioUnit = null
         }
+        stableRef?.dispose()
+        stableRef = null
     }
 }
 
@@ -271,15 +215,21 @@ private fun recordingCallback(
         )
 
         if (status == 0) {
-            val samples = bufferList.mBuffers.pointed.mData!!.reinterpret<ShortVar>()
+            val samples = bufferList.mBuffers.pointed.mData?.reinterpret<ShortVar>()
+            if (samples == null) {
+                recorder.audioDataChannel.close(IllegalStateException("AudioUnitRender returned no samples"))
+                return -1
+            }
             val frameCount = (bufferList.mBuffers.pointed.mDataByteSize / 2u).toInt()
             val shortArray = ShortArray(frameCount)
             for (i in 0 until frameCount) {
                 shortArray[i] = samples[i]
             }
-            recorder.audioDataChannel.trySend(shortArray)
+            if (recorder.audioDataChannel.trySend(shortArray).isFailure) {
+                recorder.audioDataChannel.close(IllegalStateException("Recording consumer overflow"))
+            }
         } else {
-            println("AudioUnitRender error: $status")
+            recorder.audioDataChannel.close(IllegalStateException("AudioUnitRender failed: $status"))
         }
 
         return status

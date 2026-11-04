@@ -1,100 +1,86 @@
 package com.d10ng.voice
 
-import com.d10ng.common.base.toByteArray
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlin.math.abs
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-/**
- * PCM音频录音器
- * @Author d10ng
- * @Date 2024/9/19 09:23
- */
-abstract class PCMVoiceRecorder(
-    // 采样率
-    private val sampleRate: Int
-) {
-
-    // 录音状态
+/** Records mono, little-endian, 16-bit PCM. */
+abstract class PCMVoiceRecorder(private val sampleRate: Int) {
+    init { require(sampleRate > 0) { "Unsupported sample rate: $sampleRate" } }
     private val recordingFlow = MutableStateFlow(false)
-
-    // 录音时长，单位为毫秒
     private val recordTimeFlow = MutableStateFlow(0L)
-    private val recordTimeTextFlow = recordTimeFlow.map { it / 1000 }
-        .distinctUntilChanged().map { secondTime2Text(it) }
-
-    // 录音音量
-    private val recordVolumeFlow = MutableSharedFlow<Float>()
+    private val recordTimeTextFlow = recordTimeFlow.map { it / 1000 }.distinctUntilChanged().map { secondTime2Text(it) }
+    private val recordVolumeFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val errorFlow = MutableStateFlow<Throwable?>(null)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutex = Mutex()
+    private var recordJob: Job? = null
+    private val chunks = mutableListOf<ByteArray>()
+    private var byteCount = 0
 
     fun getRecordStatusFlow() = recordingFlow.asStateFlow()
     fun getRecordTimeFlow() = recordTimeFlow.asStateFlow()
     fun getRecordTimeTextFlow() = recordTimeTextFlow
     fun getRecordVolumeUpdateEvent() = recordVolumeFlow.asSharedFlow()
+    fun getErrorFlow() = errorFlow.asStateFlow()
 
-    private val scope = CoroutineScope(Dispatchers.IO)
-
-    // 录音任务
-    private var recordJob: Job? = null
-
-    // 录音数据
-    private var data = byteArrayOf()
-
-    /**
-     * 开始录音
-     */
-    fun start() {
-        if (recordJob != null) throw Exception("already recording")
-        recordJob = scope.launch {
-            recordingFlow.value = true
+    fun start() = runBlocking {
+        mutex.withLock {
+            check(!recordingFlow.value) { "Already recording" }
+            recordJob?.join()
+            chunks.clear()
+            byteCount = 0
             recordTimeFlow.value = 0
-            data = byteArrayOf()
-            startRecord().collect {
-                // 计算音量百分比
-                var total = 0.0
-                for (element in it) {
-                    total += abs(element.toDouble())
+            errorFlow.value = null
+            recordingFlow.value = true
+            recordJob = scope.launch {
+                try {
+                    startRecord().collect { samples ->
+                        if (samples.isNotEmpty()) {
+                            check(samples.size.toLong() * 2 + byteCount <= Int.MAX_VALUE) { "Recording is too large" }
+                            val bytes = ByteArray(samples.size * 2)
+                            for (i in samples.indices) {
+                                bytes[i * 2] = samples[i].toByte()
+                                bytes[i * 2 + 1] = (samples[i].toInt() shr 8).toByte()
+                            }
+                            chunks.add(bytes)
+                            byteCount += bytes.size
+                            recordTimeFlow.value = pcmDurationMillis(byteCount, sampleRate)
+                            recordVolumeFlow.tryEmit(pcmVolume(bytes, 0, bytes.size))
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    errorFlow.value = e
+                } finally {
+                    recordingFlow.value = false
                 }
-                val volume = (abs(total / it.size) / Short.MAX_VALUE * 5).toFloat()
-                    .coerceAtMost(100f)
-                recordVolumeFlow.emit(volume)
-                // 计算录音时长
-                recordTimeFlow.value += it.size / (sampleRate / 1000)
-                // 添加录音数据
-                data += it.toByteArray()
             }
         }
     }
 
-    /**
-     * 停止录音
-     */
-    fun stop(): ByteArray {
-        recordJob?.cancel()
-        recordJob = null
-        recordingFlow.value = false
-        return data
+    /** Compatibility API; prefer stopAndGetData off the UI thread for large recordings. */
+    fun stop(): ByteArray = runBlocking { stopAndGetData() }
+
+    suspend fun stopAndGetData(): ByteArray = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            recordJob?.cancelAndJoin()
+            recordJob = null
+            recordingFlow.value = false
+            val result = ByteArray(byteCount)
+            var offset = 0
+            for (chunk in chunks) {
+                chunk.copyInto(result, offset)
+                offset += chunk.size
+            }
+            result
+        }
     }
 
-    /**
-     * 开始录音
-     * @return Flow<ShortArray>
-     */
     internal abstract fun startRecord(): Flow<ShortArray>
 }
 
-/**
- * 创建PCM录音器
- * @param sampleRate Int
- * @return PCMVoiceRecorder
- */
 expect fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder

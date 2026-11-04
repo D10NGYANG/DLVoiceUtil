@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- The demo uses only DLAppUtil cache and permission helpers; it never posts notifications. -->
+    <issue id="NotificationPermission">
+        <ignore regexp=".*usage from com\.d10ng\.app\.managers\.NotificationController.*" />
+    </issue>
+</lint>

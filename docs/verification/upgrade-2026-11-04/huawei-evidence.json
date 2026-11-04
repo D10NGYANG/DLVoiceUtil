@@ -1,0 +1,25 @@
+[
+  {
+    "record_stop": [
+      "开始录音",
+      "录音时长: 00:00:15",
+      "播放录音",
+      "播放时长: 00:00:00",
+      "保存文件到缓存目录"
+    ]
+  },
+  {
+    "saved_bytes": 240956,
+    "seconds": 15.05975,
+    "nonzero_samples": 119412
+  },
+  {
+    "playback_completed": true
+  },
+  {
+    "repeated_recordings": 3
+  },
+  {
+    "background_stops_recording": true
+  }
+]

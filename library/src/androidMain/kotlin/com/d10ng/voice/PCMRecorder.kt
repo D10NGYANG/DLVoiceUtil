@@ -94,7 +94,7 @@ class PCMRecorder(
                         val per = total / readSize
                         val volume = if (per == 0.0) 0 else min(per.roundToInt() / 20, 100)
                         scope.launch { recordVolumeFlow.emit(volume) }
-                        bos?.write(buffer.toByteArray())
+                        bos?.write(buffer.copyOf(readSize).toByteArray())
                     }
                 }
             }

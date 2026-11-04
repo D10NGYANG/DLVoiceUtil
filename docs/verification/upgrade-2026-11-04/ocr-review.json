@@ -1,0 +1,348 @@
+{
+  "summary": {
+    "total_files": 31,
+    "reviewed_files": 31,
+    "skipped_files": 0,
+    "coverage_rate": 100.0
+  },
+  "findings": [],
+  "checklist": [
+    {
+      "path": "build.gradle.kts",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "6a915a70b0d384ec4be75dccb5361f084fd9a44a710b527ecd9ac7d1f9a9fe09"
+    },
+    {
+      "path": "composeApp/build.gradle.kts",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "cdb348e766a051f48d40907a2c83c5e2ecb5ca82b89f86363692a27c79b19a1b"
+    },
+    {
+      "path": "composeApp/src/androidMain/kotlin/com/d10ng/voice/demo/FileIOUtils.android.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "fb619129ef18def237d6bedfa72866470a4bcd44f75b2a0738df0f73f5331ae0"
+    },
+    {
+      "path": "composeApp/src/commonMain/kotlin/com/d10ng/voice/demo/App.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "28611c95b068bb50e07f049dbf26ae0e26679e48ed8bd8db71cd6bc67705bbcb"
+    },
+    {
+      "path": "composeApp/src/iosMain/kotlin/com/d10ng/voice/demo/FileIOUtils.ios.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "18c7e7f4381f3c95aa0014ef2087d1759b852fb3557dfbaecb15d50a797cd2b8"
+    },
+    {
+      "path": "composeApp/src/iosMain/kotlin/com/d10ng/voice/demo/PermissionUtils.ios.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "076a7250c18651b7b977fc8252923583fd341ba59b95a0e23128b3f6617965d9"
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "4b445b2251493bb48478d16643393d951bc015dfaedd2e9064e7f84e384be868"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "70839bbe38c101499b2c65ee26c17365e01daa5bef158aded54c661f966dcdf3"
+    },
+    {
+      "path": "gradlew",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "a5a5c199ba02189ae8c46a334223371a20599d9c298ef65e7540ede4a3f72d59"
+    },
+    {
+      "path": "library/build.gradle.kts",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "3d8f7f904d1141f6f37ddc2b66f9173ad309d1be8764938766e6f68ae5fdb0bd"
+    },
+    {
+      "path": "library/src/androidMain/kotlin/com/d10ng/voice/PCMPlayer.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "5368a9cb3e28b2ffb7a3c4e5e357a902ed7a63059f9971b8626892cc619bdfc8"
+    },
+    {
+      "path": "library/src/androidMain/kotlin/com/d10ng/voice/PCMRecorder.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "d9750fdb8decb858105fdbec6580d0603d0d1b6061cb7fe4cb474081e1adcdc0"
+    },
+    {
+      "path": "library/src/androidMain/kotlin/com/d10ng/voice/PCMVoicePlayer.android.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "d3778f7d555383ef1926e5e84af7253c9c4b3afb0a6a8c655d9f44e0f61c727b"
+    },
+    {
+      "path": "library/src/androidMain/kotlin/com/d10ng/voice/PCMVoiceRecorder.android.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "8c476fe411cec59671dae452ef3cae052ca51882ecd6a2463318bd11d8715067"
+    },
+    {
+      "path": "library/src/commonMain/kotlin/com/d10ng/voice/PCMVoicePlayer.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "89b3cbc353960608e2072f2caa4c5d3e7aea1e5bede2692150c4cc8816485539"
+    },
+    {
+      "path": "library/src/commonMain/kotlin/com/d10ng/voice/PCMVoiceRecorder.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "991f4779cc6f3a3484eb86cdb3f0000e80e8f2789563901001149243bf68f44c"
+    },
+    {
+      "path": "library/src/commonMain/kotlin/com/d10ng/voice/ShortUtils.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "93e9525df5d54cb3d7d807480b5815f2e65513c06e61f61f09b8d0e6d479acc6"
+    },
+    {
+      "path": "library/src/iosMain/kotlin/com/d10ng/voice/PCMVoicePlayer.ios.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "39d33cfdbf28de0baf72bcea6f3f5c62efb1ec48024d31ad6719aefa2b25207b"
+    },
+    {
+      "path": "library/src/iosMain/kotlin/com/d10ng/voice/PCMVoiceRecorder.ios.kt",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "dc297e6bf3c79c1c58ca160691dd0350d2f2899027c5f8d1cc2e270300cc2ec9"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "status": "modified",
+      "result": "reviewed",
+      "sha256": "0210576afb12c5c3e3133e5a7f1d06b526553b8202bd7a765e7b6626c3aea1e6"
+    },
+    {
+      "path": "androidApp/build.gradle.kts",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "b1377a7b13386484ff89abccc11302b794c7754b286c0a23087848a1478602b4"
+    },
+    {
+      "path": "androidApp/lint.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "9836cba4a6be7c433084d25056b523c6a0a07b106a16f36744ed986553261f1c"
+    },
+    {
+      "path": "androidApp/src/main/AndroidManifest.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "e4f050745258ac0c37ff6844db8f82689a78020861471d4adc3ab6d16ccb81a9"
+    },
+    {
+      "path": "androidApp/src/main/kotlin/com/d10ng/voice/demo/MainActivity.kt",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "38fcf6ce4ba79f00afc665b0460f7c90f9d25b428881e7b7a5d2e33e7a6047f7"
+    },
+    {
+      "path": "androidApp/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "01d1a6a6c1234eb7fe270d097eb283d72b9c95ae5118886f1b6573aad280f1f7"
+    },
+    {
+      "path": "androidApp/src/main/res/drawable/ic_launcher_background.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "8bbfb2b06f73da00618068979faaccfdea6639c62b08c204fe066008e1b19d1f"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "993b38e238eaf485eca875727e0a128293d612a52e20ea8e2ef84a15493bb06e"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "993b38e238eaf485eca875727e0a128293d612a52e20ea8e2ef84a15493bb06e"
+    },
+    {
+      "path": "androidApp/src/main/res/values/strings.xml",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "07280c8d6e26ccaabfcc45df60114cee716c1b375b28b671cf6635b8d2bcd86b"
+    },
+    {
+      "path": "library/src/commonTest/kotlin/com/d10ng/voice/PCMVoiceTest.kt",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "e3a2774c4624f0a8b53b6d85e308a44f6e78e8d46fc0bd210d61f935afd9ac80"
+    },
+    {
+      "path": "library/src/iosTest/kotlin/com/d10ng/voice/PCMNativeBufferTest.kt",
+      "status": "added",
+      "result": "reviewed",
+      "sha256": "20b8c0262de30d25e8489f465e6c8f41893056574916a15f03d6eb5606d1960d"
+    }
+  ],
+  "additional_reviewed": [
+    {
+      "path": "README.md",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/AndroidManifest.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/kotlin/com/d10ng/voice/demo/MainActivity.kt",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/drawable-v24/ic_launcher_foreground.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/drawable/ic_launcher_background.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-hdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-hdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-mdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-mdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xxhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xxxhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "composeApp/src/androidMain/res/values/strings.xml",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "result": "Regenerated by official Gradle wrapper task; validated by successful wrapper build"
+    },
+    {
+      "path": "gradlew.bat",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "iosApp/iosApp.xcodeproj/project.pbxproj",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "androidApp/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "result": "byte-for-byte move verified"
+    },
+    {
+      "path": "docs/research/dependency-audit-2026-11-03.md",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "iosApp/AudioFlowTests/AudioFlowTests.swift",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    },
+    {
+      "path": "iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/AudioAcceptance.xcscheme",
+      "result": "reviewed manually, including moved/deleted source counterparts"
+    }
+  ],
+  "generated_skipped": [
+    {
+      "path": ".codegraph/.gitignore",
+      "reason": "Generated local index configuration"
+    }
+  ],
+  "review_notes": [
+    "Android app identity and resource bytes preserved",
+    "KMP publishing coordinates and three platform variants verified by isolated consumer compilation",
+    "Explicit Android host tests enabled",
+    "Notifications lint ignore limited to unused DL NotificationController diagnostic",
+    "No alpha/beta dependencies observed in resolved Android runtime tree"
+  ]
+}

@@ -26,7 +26,7 @@ actual fun getCacheFilePath(fileName: String): String {
     val cachesDirectory =
         fileManager.URLForDirectory(NSCachesDirectory, NSUserDomainMask, null, true, null)
     val fileURL = cachesDirectory?.URLByAppendingPathComponent(fileName)
-    return fileURL?.path ?: ""
+    return checkNotNull(fileURL?.path) { "Cannot locate cache directory" }
 }
 
 /**
@@ -41,14 +41,15 @@ actual fun writeFileAppend(path: String, data: ByteArray) {
 
     if (fileManager.fileExistsAtPath(path)) {
         // 文件存在，追加内容
-        NSFileHandle.fileHandleForUpdatingAtPath(path)?.let {
-            it.seekToEndOfFile()
-            it.writeData(nsData)
-            it.closeFile()
+        checkNotNull(NSFileHandle.fileHandleForUpdatingAtPath(path)) { "Cannot open file: $path" }.let {
+            try {
+                it.seekToEndOfFile()
+                it.writeData(nsData)
+            } finally { it.closeFile() }
         }
     } else {
         // 文件不存在，创建新文件并写入内容
-        nsData.writeToFile(path, true)
+        check(nsData.writeToFile(path, true)) { "Cannot write file: $path" }
     }
 }
 
@@ -58,7 +59,7 @@ actual fun writeFileAppend(path: String, data: ByteArray) {
  */
 @OptIn(ExperimentalForeignApi::class)
 actual fun deleteFile(path: String) {
-    NSFileManager.defaultManager().removeItemAtPath(path, null)
+    check(NSFileManager.defaultManager().removeItemAtPath(path, null)) { "Cannot delete file: $path" }
 }
 
 /**
@@ -67,7 +68,7 @@ actual fun deleteFile(path: String) {
  * @return ByteArray
  */
 actual fun readFile(path: String): ByteArray {
-    val data = NSData.dataWithContentsOfFile(path) ?: return byteArrayOf()
+    val data = checkNotNull(NSData.dataWithContentsOfFile(path)) { "Cannot read file: $path" }
     return data.toByteArray()
 }
 
@@ -78,5 +79,5 @@ actual fun readFile(path: String): ByteArray {
  */
 actual fun writeFile(path: String, data: ByteArray) {
     val nsData = data.toNSData()
-    nsData.writeToFile(path, true)
+    check(nsData.writeToFile(path, true)) { "Cannot write file: $path" }
 }

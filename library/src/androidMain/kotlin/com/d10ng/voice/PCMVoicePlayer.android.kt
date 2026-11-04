@@ -16,9 +16,13 @@ actual fun createPCMVoicePlayer(): PCMVoicePlayer {
 class PCMVoicePlayerAndroid : PCMVoicePlayer() {
 
     private var audioTrack: AudioTrack? = null
+    private var frameCount = 0
+
+    override fun isPlaybackComplete(): Boolean = (audioTrack?.playbackHeadPosition ?: 0) >= frameCount
 
     override fun startPlay(data: ByteArray, sampleRate: Int) {
-        if (audioTrack != null) return
+        check(audioTrack == null) { "Already playing" }
+        frameCount = data.size / 2
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(
@@ -48,17 +52,14 @@ class PCMVoicePlayerAndroid : PCMVoicePlayer() {
                 AudioTrack.MODE_STATIC
             )
         }
-        audioTrack?.write(data, 0, data.size)
+        check(audioTrack?.state != AudioTrack.STATE_UNINITIALIZED) { "AudioTrack initialization failed" }
+        check(audioTrack?.write(data, 0, data.size) == data.size) { "Incomplete AudioTrack write" }
         audioTrack?.play()
     }
 
     override fun stopPlay() {
-        try {
-            audioTrack?.stop()
-            audioTrack?.release()
-            audioTrack = null
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        val track = audioTrack ?: return
+        audioTrack = null
+        try { track.stop() } finally { track.release() }
     }
 }

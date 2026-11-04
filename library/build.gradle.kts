@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,52 +7,42 @@ plugins {
 }
 
 group = "com.github.D10NGYANG"
-version = "0.2.8"
+version = "0.3.0"
 
 kotlin {
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
-        publishLibraryVariants("release")
+    android {
+        namespace = "com.d10ng.voice"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) }
+        withHostTest {}
     }
     iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         commonMain.dependencies {
             // 协程
-            implementation(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.coroutines.core)
             // 通用计算
             implementation(libs.dl.common)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         androidMain.dependencies {
             // Android
-            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.annotation)
             // 协程 Android
             implementation(libs.kotlinx.coroutines.android)
         }
     }
 }
 
-android {
-    namespace = "com.d10ng.voice"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+val bds100MavenUsername = providers.gradleProperty("bds100MavenUsername")
+val bds100MavenPassword = providers.gradleProperty("bds100MavenPassword")
 
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-}
-
-
-val bds100MavenUsername: String by project
-val bds100MavenPassword: String by project
-
-val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
+val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
 }
 
@@ -62,20 +51,25 @@ afterEvaluate {
         publications {
             withType(MavenPublication::class) {
                 //artifactId = artifactId.replace(project.name, rootProject.name)
-                artifact(tasks["javadocJar"])
+                artifact(javadocJar)
             }
         }
         repositories {
             maven {
-                url = uri("/Users/d10ng/project/kotlin/maven-repo/repository")
+                url = uri(providers.gradleProperty("localMavenRepository").getOrElse(layout.buildDirectory.dir("repository").get().asFile.path))
             }
             maven {
                 credentials {
-                    username = bds100MavenUsername
-                    password = bds100MavenPassword
+                    username = bds100MavenUsername.orNull
+                    password = bds100MavenPassword.orNull
                 }
                 setUrl("https://nexus.bds100.com/repository/maven-releases/")
             }
         }
     }
+}
+
+// Allow acceptance runs to use a dedicated simulator without changing developer devices.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest>().configureEach {
+    providers.gradleProperty("iosSimulatorId").orNull?.let { device.set(it) }
 }

@@ -5,6 +5,19 @@
 	};
 	objectVersion = 56;
 	objects = {
+        A00000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFlowTests.swift; sourceTree = "<group>"; };
+        A00000000000000000000002 = {isa = PBXBuildFile; fileRef = A00000000000000000000001; };
+        A00000000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = AudioFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        A00000000000000000000004 = {isa = PBXGroup; children = (A00000000000000000000001,); path = AudioFlowTests; sourceTree = "<group>"; };
+        A00000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000007 = {isa = PBXContainerItemProxy; containerPortal = 7555FF73242A565900829871; proxyType = 1; remoteGlobalIDString = 7555FF7A242A565900829871; remoteInfo = iosApp; };
+        A00000000000000000000008 = {isa = PBXTargetDependency; target = 7555FF7A242A565900829871; targetProxy = A00000000000000000000007; };
+        A00000000000000000000009 = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000010; buildPhases = (A00000000000000000000005,A00000000000000000000006,); buildRules = (); dependencies = (A00000000000000000000008,); name = AudioFlowTests; productName = AudioFlowTests; productReference = A00000000000000000000003; productType = "com.apple.product-type.bundle.ui-testing"; };
+        A00000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000011,A00000000000000000000012,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+        A00000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.d10ng.voice.demo.AudioFlowTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 15.3; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = iosApp; CODE_SIGN_STYLE = Automatic; }; };
+        A00000000000000000000012 = {isa = XCBuildConfiguration; name = Release; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.d10ng.voice.demo.AudioFlowTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 15.3; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = iosApp; CODE_SIGN_STYLE = Automatic; }; };
+
 
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
@@ -53,6 +66,7 @@
 			isa = PBXGroup;
 			children = (
 				AB1DB47929225F7C00F7AF9C /* Configuration */,
+                A00000000000000000000004,
 				7555FF7D242A565900829871 /* iosApp */,
 				7555FF7C242A565900829871 /* Products */,
 				42799AB246E5F90AF97AA0EF /* Frameworks */,
@@ -63,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				7555FF7B242A565900829871 /* DLVoiceUtil.app */,
+                A00000000000000000000003,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,6 +156,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                A00000000000000000000009,
 				7555FF7A242A565900829871 /* iosApp */,
 			);
 		};
@@ -323,7 +339,7 @@
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)\n$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
@@ -350,7 +366,7 @@
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)\n$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.3;

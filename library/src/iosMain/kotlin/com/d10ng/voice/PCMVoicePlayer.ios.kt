@@ -24,7 +24,6 @@ import kotlinx.cinterop.value
 import platform.AVFAudio.AVAudioFormat
 import platform.AVFAudio.AVAudioPCMBuffer
 import platform.AVFAudio.AVAudioPlayer
-import platform.AVFAudio.AVAudioPlayerDelegateProtocol
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionModeDefault
@@ -57,13 +56,12 @@ import platform.CoreAudioTypes.kAudioFormatFlagIsPacked
 import platform.CoreAudioTypes.kAudioFormatFlagIsSignedInteger
 import platform.CoreAudioTypes.kAudioFormatLinearPCM
 import platform.CoreAudioTypes.kAudio_NoError
-import platform.darwin.NSObject
 import platform.darwin.OSStatus
 import platform.darwin.UInt32
 import platform.darwin.UInt32Var
-import platform.darwin.dispatch_async
-import platform.darwin.dispatch_get_main_queue
 import platform.posix.memcpy
+import platform.posix.memset
+import kotlin.concurrent.Volatile
 import kotlin.experimental.ExperimentalNativeApi
 
 /**
@@ -78,25 +76,19 @@ class PCMVoicePlayerIOS : PCMVoicePlayer() {
 
     private var player: AVAudioPlayer? = null
 
-    private val playerDelegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
-        override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
-            println("播放结束")
-            stopPlay()
-        }
-    }
+    override fun isPlaybackComplete(): Boolean = player?.playing != true
 
     @OptIn(ExperimentalForeignApi::class)
     override fun startPlay(data: ByteArray, sampleRate: Int) {
         if (player != null) throw Exception("Already playing")
-        val wavData = pcmToWav(data).toNSData()
+        val wavData = pcmToWav(data, sampleRate).toNSData()
         AVAudioSession.sharedInstance().apply {
-            setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)
-            setActive(true, null)
+            check(setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)) { "Cannot configure audio session" }
+            check(setActive(true, null)) { "Cannot activate audio session" }
         }
         player = AVAudioPlayer(wavData, null).apply {
-            delegate = playerDelegate
-            prepareToPlay()
-            play()
+            check(prepareToPlay()) { "Cannot prepare audio playback" }
+            check(play()) { "Cannot start audio playback" }
         }
     }
 
@@ -105,12 +97,12 @@ class PCMVoicePlayerIOS : PCMVoicePlayer() {
         player = null
     }
 
-    private fun pcmToWav(pcmData: ByteArray): ByteArray {
-        val wavHeader = createWavHeader(pcmData.size)
+    private fun pcmToWav(pcmData: ByteArray, sampleRate: Int): ByteArray {
+        val wavHeader = createWavHeader(pcmData.size, sampleRate)
         return wavHeader + pcmData
     }
 
-    private fun createWavHeader(pcmDataSize: Int): ByteArray {
+    internal fun createWavHeader(pcmDataSize: Int, sampleRate: Int): ByteArray {
         val wavDataSize = pcmDataSize + 36
         return byteArrayOf(
             0x52, 0x49, 0x46, 0x46, // "RIFF"
@@ -123,8 +115,8 @@ class PCMVoicePlayerIOS : PCMVoicePlayer() {
             16, 0, 0, 0, // Subchunk1Size (16 for PCM)
             1, 0, // AudioFormat (1 for PCM)
             1, 0, // NumChannels (1 for mono)
-            0x80.toByte(), 0xbb.toByte(), 0, 0, // SampleRate (48000)
-            0x00, 0x77, 0x01, 0, // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
+            sampleRate.toByte(), (sampleRate shr 8).toByte(), (sampleRate shr 16).toByte(), (sampleRate shr 24).toByte(),
+            (sampleRate * 2).toByte(), (sampleRate * 2 shr 8).toByte(), (sampleRate * 2 shr 16).toByte(), (sampleRate * 2 shr 24).toByte(),
             2, 0, // BlockAlign (NumChannels * BitsPerSample/8)
             16, 0, // BitsPerSample (16 bits)
             0x64, 0x61, 0x74, 0x61, // "data"
@@ -158,7 +150,13 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
     @OptIn(ExperimentalForeignApi::class)
     private var audioUnit: AudioComponentInstance? = null
     var audioBuffer: ShortArray = shortArrayOf()
+    @Volatile
     var currentIndex: Int = 0
+
+    @Volatile
+    internal var playbackEnded = false
+
+    override fun isPlaybackComplete(): Boolean = playbackEnded
 
     @OptIn(ExperimentalForeignApi::class)
     private var stableRef: StableRef<PCMVoicePlayerIOS1>? = null
@@ -168,9 +166,10 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
         if (audioUnit != null) throw Exception("Already playing")
         audioBuffer = data.toShortArray()
         currentIndex = 0
+        playbackEnded = false
         AVAudioSession.sharedInstance().apply {
-            setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)
-            setActive(true, null)
+            check(setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0u, null)) { "Cannot configure audio session" }
+            check(setActive(true, null)) { "Cannot activate audio session" }
         }
         memScoped {
             val audioComponentDescription = alloc<AudioComponentDescription>().apply {
@@ -183,8 +182,8 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
             val audioComponent = AudioComponentFindNext(null, audioComponentDescription.ptr)
             val audioUnitVar = alloc<AudioComponentInstanceVar>()
             var status = AudioComponentInstanceNew(audioComponent, audioUnitVar.ptr)
-            println("status1 = $status")
             audioUnit = audioUnitVar.value
+            check(status == 0) { "AudioComponentInstanceNew failed: $status" }
             val one = alloc<UInt32Var>().apply { value = 1u }
             status = AudioUnitSetProperty(
                 audioUnit!!,
@@ -194,7 +193,7 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
                 one.ptr,
                 sizeOf<UInt32Var>().convert()
             )
-            println("status2 = $status")
+            check(status == 0) { "AudioUnit setup step 2 failed: $status" }
             val asbd = alloc<AudioStreamBasicDescription>().apply {
                 mSampleRate = sampleRate.toDouble()
                 mFormatID = kAudioFormatLinearPCM
@@ -214,7 +213,7 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
                 asbd.ptr,
                 sizeOf<AudioStreamBasicDescription>().convert()
             )
-            println("status3 = $status")
+            check(status == 0) { "AudioUnit setup step 3 failed: $status" }
             stableRef = StableRef.create(this@PCMVoicePlayerIOS1)
             val selfPtr = stableRef!!.asCPointer()
             val callbackStruct = alloc<AURenderCallbackStruct>().apply {
@@ -229,55 +228,27 @@ class PCMVoicePlayerIOS1 : PCMVoicePlayer() {
                 callbackStruct.ptr,
                 sizeOf<AURenderCallbackStruct>().convert()
             )
-            println("status4 = $status")
+            check(status == 0) { "AudioUnit setup step 4 failed: $status" }
             status = AudioUnitInitialize(audioUnit)
-            println("status5 = $status")
+            check(status == 0) { "AudioUnit setup step 5 failed: $status" }
             status = AudioOutputUnitStart(audioUnit)
-            println("status6 = $status")
+            check(status == 0) { "AudioUnit setup step 6 failed: $status" }
         }
     }
 
     @OptIn(ExperimentalForeignApi::class)
     override fun stopPlay() {
-        if (audioUnit == null) return
-
-        dispatch_async(dispatch_get_main_queue()) {
-            runCatching {
-                memScoped {
-                    var status: OSStatus
-
-                    // Stop the audio unit
-                    status = AudioOutputUnitStop(audioUnit)
-                    if (status != 0) {
-                        println("Failed to stop audio unit: $status")
-                        return@runCatching
-                    }
-
-                    // Uninitialize the audio unit
-                    status = AudioUnitUninitialize(audioUnit)
-                    if (status != 0) {
-                        println("Failed to uninitialize audio unit: $status")
-                        return@runCatching
-                    }
-
-                    // Dispose of the audio unit
-                    status = AudioComponentInstanceDispose(audioUnit)
-                    if (status != 0) {
-                        println("Failed to dispose audio unit: $status")
-                        return@runCatching
-                    }
-
-                    audioUnit = null
-
-                    stableRef?.dispose()
-                    stableRef = null
-
-                    println("Audio unit successfully stopped and disposed")
-                }
-            }.onFailure { it.printStackTrace() }
+        val unit = audioUnit
+        if (unit != null) {
+            AudioOutputUnitStop(unit)
+            AudioUnitUninitialize(unit)
+            check(AudioComponentInstanceDispose(unit) == 0) { "Cannot dispose playback AudioUnit" }
+            audioUnit = null
         }
+        stableRef?.dispose()
+        stableRef = null
+        audioBuffer = shortArrayOf()
     }
-
 }
 
 @OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
@@ -298,22 +269,21 @@ fun playbackCallback(
     val bufferList = ioData.pointed
     if (bufferList.mNumberBuffers > 0u) {
         val audioBuffer = bufferList.mBuffers[0]
-        val frameCount =
-            minOf(inNumberFrames.toInt(), audioPlayer.audioBuffer.size - audioPlayer.currentIndex)
-        val bytesToCopy = frameCount * sizeOf<ShortVar>()
-
-        audioPlayer.audioBuffer.usePinned { audioBufferPinned ->
-            val src = audioBufferPinned.addressOf(audioPlayer.currentIndex).reinterpret<ByteVar>()
-            val dst = audioBuffer.mData?.reinterpret<ByteVar>() ?: return kAudio_NoError
-            memcpy(dst, src, bytesToCopy.convert())
+        val capacity = minOf(inNumberFrames.toInt(), (audioBuffer.mDataByteSize / 2u).toInt())
+        val dst = audioBuffer.mData ?: return kAudio_NoError
+        memset(dst, 0, (capacity * 2).convert())
+        val frameCount = minOf(capacity, audioPlayer.audioBuffer.size - audioPlayer.currentIndex).coerceAtLeast(0)
+        if (frameCount > 0) {
+            audioPlayer.audioBuffer.usePinned { pinned ->
+                memcpy(dst, pinned.addressOf(audioPlayer.currentIndex), (frameCount * 2).convert())
+            }
+            audioPlayer.currentIndex += frameCount
         }
-
-        audioBuffer.mDataByteSize = bytesToCopy.convert()
-        audioPlayer.currentIndex += frameCount
-
-        if (audioPlayer.currentIndex >= audioPlayer.audioBuffer.size) {
-            audioPlayer.stopPlay()
+        if (capacity > 0 && audioPlayer.currentIndex >= audioPlayer.audioBuffer.size && frameCount == 0) {
+            audioPlayer.playbackEnded = true
         }
+        audioBuffer.mDataByteSize = (capacity * 2).toUInt()
+
     }
     return kAudio_NoError
 }

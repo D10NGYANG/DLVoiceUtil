@@ -32,7 +32,8 @@ actual fun writeFileAppend(path: String, data: ByteArray) {
  * @param path String
  */
 actual fun deleteFile(path: String) {
-    File(path).deleteOnExit()
+    val file = File(path)
+    check(!file.exists() || file.delete()) { "Cannot delete file: $path" }
 }
 
 /**

@@ -1,0 +1,23 @@
+[
+  {
+    "task": "testAndroidHostTest",
+    "suite": "com.d10ng.voice.PCMVoiceTest",
+    "tests": 10,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "task": "iosSimulatorArm64Test",
+    "suite": "iosSimulatorArm64Test.com.d10ng.voice.PCMNativeBufferTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "task": "iosSimulatorArm64Test",
+    "suite": "iosSimulatorArm64Test.com.d10ng.voice.PCMVoiceTest",
+    "tests": 10,
+    "failures": 0,
+    "errors": 0
+  }
+]

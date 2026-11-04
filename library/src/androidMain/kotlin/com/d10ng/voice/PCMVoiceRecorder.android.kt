@@ -5,71 +5,43 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.audiofx.NoiseSuppressor
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
 
-/**
- * 创建PCM录音器
- * @param sampleRate Int
- * @return PCMVoiceRecorder
- */
-actual fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder {
-    return PCMVoiceRecorderAndroid(sampleRate)
-}
+actual fun createPCMVoiceRecorder(sampleRate: Int): PCMVoiceRecorder = PCMVoiceRecorderAndroid(sampleRate)
 
-/**
- * PCM录音器
- * @property sampleRate Int
- * @constructor
- */
-class PCMVoiceRecorderAndroid(
-    private val sampleRate: Int
-) : PCMVoiceRecorder(sampleRate) {
-
-    private var audioRecorder: AudioRecord? = null
-    private var noiseSuppressor: NoiseSuppressor? = null
-
+class PCMVoiceRecorderAndroid(private val sampleRate: Int) : PCMVoiceRecorder(sampleRate) {
     @RequiresPermission(android.Manifest.permission.RECORD_AUDIO)
-    override fun startRecord(): Flow<ShortArray> {
-        if (audioRecorder != null) throw Exception("Already recording")
-        // MediaRecorder.AudioSource.MIC：指定音频源为设备的麦克风
-        // AudioFormat.CHANNEL_IN_MONO：指定单声道
-        // AudioFormat.ENCODING_PCM_16BIT：指定采样位数为16位
-        // 每秒数据量为 声道数 * 采样频率 * 采样位数 / 8，那么在25帧的情况下，每帧数据量为每秒数据量的1/25
-        val bufferSizeInBytes = AudioRecord.getMinBufferSize(
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        ).coerceAtLeast(sampleRate * 2 * 1 / 25)
-        audioRecorder = AudioRecord(
-            MediaRecorder.AudioSource.MIC, sampleRate,
-            AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes
-        )
-        // 噪音抑制
-        if (NoiseSuppressor.isAvailable()) {
-            noiseSuppressor = NoiseSuppressor.create(audioRecorder!!.audioSessionId)
-            noiseSuppressor?.enabled = true
-        }
-        return flow {
-            audioRecorder?.startRecording()
-            val buffer = ShortArray(bufferSizeInBytes / 2)
-            runCatching {
-                while (audioRecorder != null && audioRecorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                    val readSize = audioRecorder?.read(buffer, 0, bufferSizeInBytes / 2) ?: 0
-                    if (readSize > 0) emit(buffer)
-                }
+    override fun startRecord(): Flow<ShortArray> = flow {
+        val minimum = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        check(minimum > 0) { "Unsupported recording format: $minimum" }
+        val bufferBytes = maxOf(minimum, sampleRate * 2 / 25)
+        val recorder = AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate,
+            AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferBytes)
+        var suppressor: NoiseSuppressor? = null
+        try {
+            check(recorder.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord initialization failed" }
+            if (NoiseSuppressor.isAvailable()) {
+                suppressor = NoiseSuppressor.create(recorder.audioSessionId)?.apply { enabled = true }
             }
-        }.onCompletion {
-            audioRecorder?.run {
-                stop()
-                release()
+            recorder.startRecording()
+            check(recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) { "Recording did not start" }
+            val buffer = ShortArray(bufferBytes / 2)
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                // Non-blocking reads make cancellation independent of the microphone driver.
+                val count = recorder.read(buffer, 0, buffer.size, AudioRecord.READ_NON_BLOCKING)
+                check(count >= 0) { "AudioRecord.read failed: $count" }
+                if (count > 0) emit(buffer.copyOf(count)) else kotlinx.coroutines.delay(5)
             }
-            audioRecorder = null
-            noiseSuppressor?.run {
-                release()
+        } finally {
+            try {
+                if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) recorder.stop()
+            } finally {
+                try { suppressor?.release() } finally { recorder.release() }
             }
-            noiseSuppressor = null
         }
     }
 }
